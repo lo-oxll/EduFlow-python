@@ -702,38 +702,88 @@ function closeAllAcademicYearsModal() {
 
 // Show create academic year modal (centralized - no school selection)
 function showCreateAcademicYearModal() {
+    console.log('showCreateAcademicYearModal() called');
+    
     const modal = document.getElementById('createAcademicYearModal');
+    if (!modal) {
+        console.error('Create academic year modal not found!');
+        showNotification('خطأ: لم يتم العثور على نموذج إنشاء السنة الدراسية', 'error');
+        return;
+    }
+    
+    console.log('Modal element found:', modal);
     
     // Hide the school select since it's now centralized
     const schoolSelectDiv = document.querySelector('#academicYearSchoolSelect')?.closest('.form-group-admin');
     if (schoolSelectDiv) {
         schoolSelectDiv.style.display = 'none';
+        console.log('Hid school select div');
     }
     
     // Hide the "is current" checkbox since current year is now automatic
     const isCurrentDiv = document.getElementById('academicYearIsCurrent')?.closest('.form-group-admin');
     if (isCurrentDiv) {
         isCurrentDiv.style.display = 'none';
+        console.log('Hid is current checkbox');
     }
     
-    // Set default years based on current academic year
+    // Set default years based on current academic year (September-August cycle)
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
     
     let startYear, endYear;
     if (currentMonth >= 9) {
+        // September to December: current year to next year
         startYear = currentYear;
         endYear = currentYear + 1;
     } else {
+        // January to August: previous year to current year
         startYear = currentYear - 1;
         endYear = currentYear;
     }
     
-    document.getElementById('academicYearStart').value = startYear;
-    document.getElementById('academicYearEnd').value = endYear;
+    const startInput = document.getElementById('academicYearStart');
+    const endInput = document.getElementById('academicYearEnd');
+    
+    if (startInput) {
+        startInput.value = startYear;
+        console.log('Set start year:', startYear);
+        
+        // Add event listener to auto-calculate end year
+        startInput.addEventListener('input', function() {
+            const startVal = parseInt(this.value);
+            if (!isNaN(startVal) && startVal >= 2020 && startVal <= 2050) {
+                const calculatedEndYear = startVal + 1;
+                if (endInput && calculatedEndYear >= 2021 && calculatedEndYear <= 2051) {
+                    endInput.value = calculatedEndYear;
+                }
+            }
+        });
+    }
+    
+    if (endInput) {
+        endInput.value = endYear;
+        console.log('Set end year:', endYear);
+        
+        // Add event listener to validate end year
+        endInput.addEventListener('input', function() {
+            const endVal = parseInt(this.value);
+            const startVal = startInput ? parseInt(startInput.value) : null;
+            
+            if (!isNaN(endVal) && !isNaN(startVal)) {
+                if (endVal !== startVal + 1) {
+                    this.setCustomValidity('سنة الانتهاء يجب أن تكون سنة البداية + 1');
+                } else {
+                    this.setCustomValidity('');
+                }
+            }
+        });
+    }
     
     modal.style.display = 'flex';
+    console.log('Modal should now be visible');
+    showNotification('تم فتح نموذج إنشاء السنة الدراسية', 'success');
 }
 
 function closeCreateAcademicYearModal() {
@@ -744,17 +794,96 @@ function closeCreateAcademicYearModal() {
 async function createAcademicYear(e) {
     e.preventDefault();
     
-    const startYear = parseInt(document.getElementById('academicYearStart').value);
-    const endYear = parseInt(document.getElementById('academicYearEnd').value);
+    console.log('createAcademicYear() called');
+    console.log('Event object:', e);
+    console.log('Target element:', e.target);
     
-    if (endYear !== startYear + 1) {
-        showNotification('سنة الانتهاء يجب أن تكون سنة البداية + 1', 'error');
+    // Log form data
+    const formData = new FormData(e.target);
+    console.log('Form data entries:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
+    
+    const startInput = document.getElementById('academicYearStart');
+    const endInput = document.getElementById('academicYearEnd');
+    const schoolSelect = document.getElementById('academicYearSchoolSelect');
+    
+    console.log('Form elements found:');
+    console.log('- Start input:', startInput);
+    console.log('- End input:', endInput);
+    console.log('- School select:', schoolSelect);
+    
+    if (!startInput || !endInput) {
+        console.error('Academic year input fields not found!');
+        showNotification('خطأ: لم يتم العثور على حقول إدخال السنة الدراسية', 'error');
         return;
     }
     
+    const startYear = parseInt(startInput.value);
+    const endYear = parseInt(endInput.value);
+    const schoolId = schoolSelect ? schoolSelect.value : null;
+    
+    console.log('Values extracted:');
+    console.log('- Start year:', startYear);
+    console.log('- End year:', endYear);
+    console.log('- School ID:', schoolId);
+    
+    // Validate required fields
+    if (isNaN(startYear)) {
+        showNotification('سنة البداية مطلوبة ويجب أن تكون رقماً', 'error');
+        startInput.focus();
+        return;
+    }
+    
+    if (isNaN(endYear)) {
+        showNotification('سنة الانتهاء مطلوبة ويجب أن تكون رقماً', 'error');
+        endInput.focus();
+        return;
+    }
+    
+    console.log('Start year:', startYear, 'End year:', endYear);
+    
+    // Validate year ranges
+    if (isNaN(startYear) || startYear < 2020 || startYear > 2050) {
+        showNotification('سنة البداية يجب أن تكون بين 2020 و 2050', 'error');
+        startInput.focus();
+        return;
+    }
+    
+    if (isNaN(endYear) || endYear < 2021 || endYear > 2051) {
+        showNotification('سنة الانتهاء يجب أن تكون بين 2021 و 2051', 'error');
+        endInput.focus();
+        return;
+    }
+    
+    // Validate that end year is exactly start year + 1
+    if (endYear !== startYear + 1) {
+        showNotification('سنة الانتهاء يجب أن تكون سنة البداية + 1 بالضبط', 'error');
+        endInput.focus();
+        return;
+    }
+    
+    // Validate academic year name format
     const yearName = `${startYear}/${endYear}`;
+    if (yearName.length !== 9 || yearName.indexOf('/') !== 4) {
+        showNotification('تنسيق السنة الدراسية غير صحيح', 'error');
+        return;
+    }
     
     try {
+        showNotification(`جارٍ إنشاء السنة الدراسية ${yearName}...`, 'info');
+        
+        console.log('Preparing API request...');
+        console.log('- URL: /api/system/academic-year');
+        console.log('- Method: POST');
+        console.log('- Headers:', getAuthHeaders());
+        console.log('- Body:', JSON.stringify({
+            name: yearName,
+            start_year: startYear,
+            end_year: endYear
+        }));
+        
         const response = await fetch('/api/system/academic-year', {
             method: 'POST',
             headers: getAuthHeaders(),
@@ -766,19 +895,29 @@ async function createAcademicYear(e) {
             })
         });
         
-        const result = await response.json();
+        console.log('API Response received:');
+        console.log('- Status:', response.status);
+        console.log('- Status Text:', response.statusText);
+        console.log('- Headers:', [...response.headers.entries()]);
         
-        if (response.ok) {
+        const result = await response.json();
+        console.log('API Response JSON:', result);
+        
+        if (response.ok && result.success) {
             showNotification(`تم إنشاء السنة الدراسية ${yearName} بنجاح (تطبق على جميع المدارس)`, 'success');
             closeCreateAcademicYearModal();
             await loadAllAcademicYears();
             loadCurrentAcademicYear();
         } else {
-            showNotification(result.error_ar || result.error || 'حدث خطأ', 'error');
+            const errorMessage = result.error_ar || result.error || 'حدث خطأ غير معروف';
+            console.error('API Error:', errorMessage);
+            console.error('Full error response:', result);
+            showNotification(errorMessage, 'error');
         }
     } catch (error) {
-        console.error('Error creating academic year:', error);
-        showNotification('حدث خطأ في الاتصال بالخادم', 'error');
+        console.error('Network error creating academic year:', error);
+        console.error('Error stack:', error.stack);
+        showNotification('حدث خطأ في الاتصال بالخادم: ' + error.message, 'error');
     }
 }
 

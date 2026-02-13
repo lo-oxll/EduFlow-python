@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Styling Test</title>
+    <link rel="stylesheet" href="public/assets/css/unified-design-system.css">
+    <link rel="stylesheet" href="public/assets/css/styles.css">
+    <link rel="stylesheet" href="public/assets/css/enhanced.css">
+    <link rel="stylesheet" href="public/assets/css/teacher-portal-enhanced.css">
+    <link rel="stylesheet" href="public/assets/css/accessibility-enhancements.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Button Styling Test</h1>
+    
+    <div class="test-section">
+        <h2>Base Buttons</h2>
+        <div class="button-grid">
+            <button class="btn btn-primary">Primary Button</button>
+            <button class="btn btn-secondary">Secondary Button</button>
+            <button class="btn btn-success">Success Button</button>
+            <button class="btn btn-danger">Danger Button</button>
+            <button class="btn btn-warning">Warning Button</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Button Sizes</h2>
+        <div class="button-grid">
+            <button class="btn btn-primary btn-sm">Small Button</button>
+            <button class="btn btn-primary">Normal Button</button>
+            <button class="btn btn-primary btn-lg">Large Button</button>
+            <button class="btn btn-primary btn-xl">Extra Large Button</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Button Variants</h2>
+        <div class="button-grid">
+            <button class="btn btn-outline">Outline Button</button>
+            <button class="btn btn-ghost">Ghost Button</button>
+            <button class="btn btn-info">Info Button</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Teacher Portal Buttons</h2>
+        <div class="button-grid">
+            <button class="btn-primary">Teacher Primary</button>
+            <button class="btn-secondary">Teacher Secondary</button>
+            <button class="btn-info">Teacher Info</button>
+            <button class="btn-danger">Teacher Danger</button>
+            <button class="btn-small">Teacher Small</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Interactive Test</h2>
+        <p>Hover over buttons to test hover effects. All buttons should have consistent sizing, padding, and hover behavior.</p>
+        <div class="button-grid">
+            <button class="btn btn-primary" onclick="alert('Primary button clicked!')">Click Me</button>
+            <button class="btn btn-success" onclick="alert('Success button clicked!')">Success Action</button>
+            <button class="btn btn-danger" onclick="alert('Danger button clicked!')">Danger Action</button>
+        </div>
+    </div>
+</body>
+</html>

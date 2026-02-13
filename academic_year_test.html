@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Academic Year Creation Test</title>
+    <script>
+        async function testAcademicYearCreation() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Testing Academic Year Creation...</h3>';
+            
+            try {
+                // Test 1: Valid academic year creation
+                results.innerHTML += '<p>1. Testing valid academic year creation (2032/2033)...</p>';
+                
+                const response1 = await fetch('/api/system/academic-year', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: '2032/2033',
+                        start_year: 2032,
+                        end_year: 2033
+                    })
+                });
+                
+                if (response1.ok) {
+                    const data1 = await response1.json();
+                    results.innerHTML += `<p style="color: green;">✅ Success: ${data1.message}</p>`;
+                    results.innerHTML += `<p>Created: ${data1.academic_year.name}</p>`;
+                } else {
+                    const error1 = await response1.json();
+                    results.innerHTML += `<p style="color: red;">❌ Failed: ${error1.error_ar || error1.error}</p>`;
+                }
+                
+                // Test 2: Invalid academic year (wrong end year)
+                results.innerHTML += '<p>2. Testing invalid academic year (2033/2035)...</p>';
+                
+                const response2 = await fetch('/api/system/academic-year', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: '2033/2035',
+                        start_year: 2033,
+                        end_year: 2035
+                    })
+                });
+                
+                if (response2.ok) {
+                    results.innerHTML += '<p style="color: red;">❌ Should have failed but succeeded</p>';
+                } else {
+                    const error2 = await response2.json();
+                    results.innerHTML += `<p style="color: green;">✅ Correctly rejected: ${error2.error_ar || error2.error}</p>`;
+                }
+                
+                // Test 3: Test getting all academic years
+                results.innerHTML += '<p>3. Testing get all academic years...</p>';
+                
+                const response3 = await fetch('/api/system/academic-years');
+                if (response3.ok) {
+                    const data3 = await response3.json();
+                    results.innerHTML += `<p style="color: green;">✅ Success: Found ${data3.academic_years.length} academic years</p>`;
+                    data3.academic_years.forEach(year => {
+                        results.innerHTML += `<p>- ${year.name} (Current: ${year.is_current ? 'Yes' : 'No'})</p>`;
+                    });
+                } else {
+                    results.innerHTML += '<p style="color: red;">❌ Failed to get academic years</p>';
+                }
+                
+                results.innerHTML += '<h3>✅ All tests completed!</h3>';
+                
+            } catch (error) {
+                results.innerHTML += `<p style="color: red;">❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Academic Year Creation Test</h1>
+    <button onclick="testAcademicYearCreation()">تشغيل الاختبارات</button>
+    <div id="results" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;">
+        <p>Click the button above to run tests</p>
+    </div>
+</body>
+</html>

@@ -296,6 +296,7 @@ header {
 .role-card.school::before { background: var(--gradient-success); }
 .role-card.student::before { background: var(--gradient-warning); }
 
+
 .role-icon {
   width: 90px;
   height: 90px;
@@ -316,13 +317,15 @@ header {
   color: var(--white);
 }
 
-.role-card.admin .role-icon { color: var(--secondary); }
-.role-card.school .role-icon { color: var(--success); }
-.role-card.student .role-icon { color: var(--warning); }
+.role-card.admin .role-icon { color: var(--primary); }
+.role-card.school .role-icon { color: var(--primary); }
+.role-card.student .role-icon { color: var(--primary); }
+.role-card.teacher .role-icon { color: var(--primary); }
 
-.role-card:hover.admin .role-icon { background: var(--gradient-secondary); }
-.role-card:hover.school .role-icon { background: var(--gradient-success); }
-.role-card:hover.student .role-icon { background: var(--gradient-warning); }
+.role-card:hover.admin .role-icon { background: var(--gradient-primary); }
+.role-card:hover.school .role-icon { background: var(--gradient-primary); }
+.role-card:hover.student .role-icon { background: var(--gradient-primary); }
+.role-card:hover.teacher .role-icon { background: var(--gradient-primary); }
 
 .role-card h4 {
   font-size: var(--font-xl);
@@ -336,28 +339,32 @@ header {
   color: var(--text-secondary);
   line-height: 1.7;
   font-size: var(--font-sm);
+  min-height: 80px; /* Ensure consistent height for vertical alignment */
+  display: flex;
+  align-items: center;
 }
 
-/* Modern Buttons */
+/* Modern Buttons - Simplified to inherit from unified design system */
 .btn {
+  /* Remove custom padding and border-radius that conflict with unified system */
+  /* Keep only unique properties that don't exist in unified system */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-6);
   background: var(--gradient-primary);
   color: var(--white);
   border: none;
-  border-radius: var(--radius-lg);
   text-decoration: none;
   font-weight: 600;
-  font-size: var(--font-sm);
+  font-size: 0.875rem; /* Match unified system */
   cursor: pointer;
   transition: var(--transition);
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-md);
   letter-spacing: 0.01em;
+  /* Remove padding and border-radius to inherit from unified system */
 }
 
 .btn::before {
@@ -376,38 +383,16 @@ header {
 }
 
 .btn:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-colored);
+  transform: translateY(-2px); /* Standardized lift */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15); /* Consistent shadow */
 }
 
 .btn:active {
   transform: translateY(-1px);
 }
 
-.btn-admin {
-  background: var(--gradient-secondary);
-}
-
-.btn-admin:hover {
-  box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.35);
-}
-
-.btn-school {
-  background: var(--gradient-success);
-}
-
-.btn-school:hover {
-  box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.35);
-}
-
-.btn-student {
-  background: var(--gradient-warning);
-  color: var(--gray-900);
-}
-
-.btn-student:hover {
-  box-shadow: 0 4px 14px 0 rgba(245, 158, 11, 0.35);
-}
+/* Portal-specific button styles removed - using unified design system */
+/* Portal buttons will inherit from unified .btn-primary, .btn-secondary, etc. */
 
 /* Modal Styles - Modern */
 .modal {
@@ -970,12 +955,25 @@ header {
   transition: var(--transition);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1);
   font-weight: 600;
+  min-height: 32px;
 }
 
 .btn-small:hover {
   transform: translateY(-2px);
+}
+
+/* Consistent icon sizing for all action buttons */
+.btn-small i {
+  font-size: 0.9rem;
+  width: 1rem;
+  height: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .btn-info {
@@ -1940,4 +1938,889 @@ header {
   .td-school {
     border: 1px solid #000;
   }
+}
+
+/* ============================================
+   RECOMMENDATIONS STYLES
+   ============================================ */
+
+/* General Recommendations Section */
+.recommendations-section {
+    padding: 1rem;
+}
+
+.recommendations-section .rec-header {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.recommendations-section .rec-stats {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.recommendations-section .rec-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.recommendations-section .rec-badge.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.recommendations-section .rec-badge.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.recommendations-section .rec-badge.danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.recommendations-section .rec-section {
+    background: var(--gray-50);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    border-right: 3px solid var(--primary);
+}
+
+.recommendations-section .rec-label {
+    font-weight: 600;
+    color: var(--gray-700);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.recommendations-section .rec-item {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.recommendations-section .rec-item.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.recommendations-section .rec-item.improving {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.recommendations-section .rec-item.danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.recommendations-section .rec-item.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.recommendations-section .rec-item.declining {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.recommendations-section .rec-item.unstable {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.recommendations-section .rec-item.info {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.recommendations-section .rec-priority {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.recommendations-section .rec-tips {
+    color: var(--gray-700);
+}
+
+.recommendations-section .rec-motivation {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1rem;
+    color: var(--gray-700);
+    margin: 1rem 0;
+    border-right: 4px solid var(--info);
+}
+
+.recommendations-section .rec-footer {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    padding: 0.5rem;
+    border-top: 1px solid var(--gray-200);
+    margin-top: 1rem;
+}
+
+.recommendations-section .success-msg {
+    background: #dcfce7;
+    color: #166534;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Notification Banner */
+.notification-banner {
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border-right: 4px solid;
+}
+
+.notification-banner.success {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-color: var(--success);
+    color: #166534;
+}
+
+.notification-banner.warning {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border-color: var(--warning);
+    color: #92400e;
+}
+
+.notification-banner.danger {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-color: var(--danger);
+    color: #991b1b;
+}
+
+.notification-banner-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.notification-banner-header i {
+    font-size: 1.1rem;
+}
+
+.notification-banner-message {
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Personalized Tips */
+.personalized-tips {
+    background: var(--gray-50);
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    border-right: 4px solid var(--primary);
+}
+
+.personalized-tips .tips-title {
+    margin: 0 0 0.75rem 0;
+    color: var(--gray-800);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.personalized-tips .tips-title i {
+    color: var(--warning);
+}
+
+.personalized-tips .tips-list {
+    margin: 0;
+    padding-right: 1.5rem;
+}
+
+.personalized-tips .tips-list li {
+    margin-bottom: 0.5rem;
+    color: var(--gray-700);
+}
+
+/* Recommendations Box (Student Portal) */
+.recommendations-box {
+    transition: all 0.3s ease;
+}
+
+.recommendations-box:hover {
+    box-shadow: var(--shadow-md);
+}
+
+/* Teacher Recommendations Styles */
+#gradeRecommendationsSection .section-title i {
+    color: var(--warning);
+}
+
+.loading-placeholder {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-500);
+}
+
+.loading-placeholder i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.recommendations-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-500);
+    background: var(--gray-50);
+    border-radius: 8px;
+}
+
+.recommendations-empty i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--gray-400);
+}
+
+.recommendations-error {
+    text-align: center;
+    padding: 2rem;
+    color: var(--danger);
+    background: #fee2e2;
+    border-radius: 8px;
+}
+
+.recommendations-error i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.btn-retry {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-retry:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Class Insights Section */
+.class-insights-section {
+    background: var(--gray-50);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.insights-title {
+    margin: 0 0 1rem 0;
+    color: var(--gray-800);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+}
+
+.insights-title.warning i {
+    color: var(--warning);
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 1rem;
+}
+
+.insight-card-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.75rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow-xs);
+}
+
+.insight-card-mini .insight-icon {
+    font-size: 1.5rem;
+}
+
+.insight-card-mini .insight-data {
+    text-align: center;
+}
+
+.insight-card-mini .insight-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gray-800);
+}
+
+.insight-card-mini .insight-value.success {
+    color: var(--success);
+}
+
+.insight-card-mini .insight-value.warning {
+    color: var(--warning);
+}
+
+.insight-card-mini .insight-value.danger {
+    color: var(--danger);
+}
+
+.insight-card-mini .insight-label {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+.subjects-focus-alert {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.subjects-focus-alert i {
+    color: var(--warning);
+}
+
+.subjects-focus-alert strong {
+    margin-left: 0.25rem;
+}
+
+.subjects-focus-alert span {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+/* Subject Analysis Section */
+.subject-analysis-section {
+    margin-top: 1rem;
+}
+
+.subject-analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.subject-analysis-card {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    border-right: 3px solid var(--primary);
+}
+
+.subject-analysis-card .subject-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.subject-analysis-card .subject-name {
+    font-weight: 600;
+    color: var(--gray-800);
+}
+
+.subject-analysis-card .subject-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.subject-analysis-card .subject-badge.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.subject-analysis-card .subject-badge.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.subject-analysis-card .subject-badge.danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.subject-analysis-card .subject-stats {
+    display: flex;
+    justify-content: space-between;
+}
+
+.subject-analysis-card .stat {
+    text-align: center;
+}
+
+.subject-analysis-card .stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--gray-700);
+    display: block;
+}
+
+.subject-analysis-card .stat-value.success {
+    color: var(--success);
+}
+
+.subject-analysis-card .stat-value.warning {
+    color: var(--warning);
+}
+
+.subject-analysis-card .stat-label {
+    font-size: 0.7rem;
+    color: var(--gray-500);
+}
+
+/* At-Risk Students Section */
+.at-risk-section {
+    margin-top: 1rem;
+}
+
+.at-risk-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.at-risk-student-card {
+    background: #fee2e2;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.at-risk-student-card .student-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.at-risk-student-card .student-name {
+    font-weight: 600;
+    color: #991b1b;
+}
+
+.at-risk-student-card .student-grade {
+    font-size: 0.8rem;
+    color: #7f1d1d;
+}
+
+.at-risk-student-card .weak-subjects {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.at-risk-student-card .weak-subject-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.at-risk-student-card .weak-subject-badge.danger {
+    background: #fecaca;
+    color: #7f1d1d;
+}
+
+/* Strategies Section */
+.strategies-section {
+    margin-top: 1rem;
+}
+
+.strategies-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.strategy-card {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    border-right: 4px solid var(--gray-300);
+}
+
+.strategy-card.high {
+    border-right-color: var(--danger);
+}
+
+.strategy-card.medium {
+    border-right-color: var(--warning);
+}
+
+.strategy-card .strategy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.strategy-card .strategy-subject {
+    font-weight: 600;
+    color: var(--gray-800);
+}
+
+.strategy-card .strategy-priority {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.strategy-card .strategy-priority.high {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.strategy-card .strategy-priority.medium {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.strategy-card .strategy-issue {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+}
+
+.strategy-card .strategy-content {
+    margin-bottom: 0.75rem;
+}
+
+.strategy-card .strategy-content strong {
+    color: var(--gray-700);
+}
+
+.strategy-card .strategy-actions {
+    margin: 0;
+    padding-right: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--gray-600);
+}
+
+.strategy-card .strategy-actions li {
+    margin-bottom: 0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .insights-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .subject-analysis-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .at-risk-student-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .strategy-card .strategy-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .insights-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .insight-card-mini {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* ============================================
+   BUTTON GROUP STYLING - CONSISTENT POSITIONING
+   ============================================ */
+
+/* Standardize button group behaviors */
+.btn-group-form {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    justify-content: flex-end;
+}
+
+.btn-group-form .btn {
+    min-width: 120px;
+}
+
+.btn-group-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Responsive button group improvements */
+@media (max-width: 768px) {
+    .btn-group-form {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .btn-group-form .btn {
+        width: 100%;
+    }
+}
+
+/* Fix portal-specific button positioning */
+.btn-primary-school,
+.btn-admin-dashboard {
+    /* Ensure consistent positioning with unified system */
+    margin: 0.25rem;
+}
+
+.btn-small {
+    /* Standardize small button positioning */
+    margin: 0.125rem;
+}
+
+/* ============================================================================
+   ACADEMIC GUIDANCE COMPONENT - Professional Card-Based Layout
+   ============================================================================ */
+
+.academic-guidance {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    direction: rtl;
+}
+
+/* Performance Summary Card */
+.guidance-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.guidance-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.performance-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+}
+
+.performance-card .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.performance-card .card-header i {
+    font-size: 1.5rem;
+}
+
+.performance-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.performance-card .card-content {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.performance-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.performance-percentage {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+/* Guidance Grid */
+.guidance-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+    .guidance-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .guidance-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Card Titles */
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.card-title i {
+    font-size: 0.9rem;
+}
+
+/* Strengths Card */
+.strengths-card {
+    border-right: 3px solid #10b981;
+}
+
+.strengths-card .card-title {
+    color: #059669;
+}
+
+.strengths-card .card-title i {
+    color: #10b981;
+}
+
+/* Improvements Card */
+.improvements-card {
+    border-right: 3px solid #f59e0b;
+}
+
+.improvements-card .card-title {
+    color: #d97706;
+}
+
+.improvements-card .card-title i {
+    color: #f59e0b;
+}
+
+/* Actions Card */
+.actions-card {
+    border-right: 3px solid #3b82f6;
+}
+
+.actions-card .card-title {
+    color: #2563eb;
+}
+
+.actions-card .card-title i {
+    color: #3b82f6;
+}
+
+/* Guidance List */
+.guidance-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.guidance-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+}
+
+.guidance-list li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.subject-name {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.subject-detail {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.priority-badge {
+    background: #fef3c7;
+    color: #d97706;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+/* Action List Specific */
+.action-list li {
+    color: #475569;
+    gap: 0.75rem;
+}
+
+.action-list li i {
+    color: #3b82f6;
+    font-size: 0.75rem;
+}
+
+/* Recommendations Box Enhancement */
+.recommendations-box {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    border-radius: 16px !important;
+    padding: 1.25rem !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.recommendations-box h3 {
+    font-size: 1rem !important;
+    margin-bottom: 1rem !important;
+    color: #1e293b !important;
+}
+
+.recommendations-box h3 i {
+    margin-left: 0.5rem;
 }

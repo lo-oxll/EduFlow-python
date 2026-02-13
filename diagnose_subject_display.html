@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تشخيص مشكلة عرض المواد</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .teacher-data {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .teacher-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        .subject-display {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .undefined { background-color: #f8d7da; color: #721c24; }
+        .defined { background-color: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 تشخيص مشكلة عرض المواد للمعلمين</h1>
+        <p>هذا الأداة تساعد في تحديد سبب ظهور "غير محدد" بدلاً من أسماء المواد</p>
+        
+        <div class="test-section info">
+            <h3>📋 خطوات التشخيص</h3>
+            <ol>
+                <li>أدخل رمز المدرسة والمعلم للفحص</li>
+                <li>تشغيل الاختبار لفحص البيانات</li>
+                <li>مراجعة النتائج لتحديد المشكلة</li>
+            </ol>
+            <div>
+                <label>رمز المدرسة: </label>
+                <input type="number" id="schoolId" value="1" min="1">
+                <label>رمز المعلم (اختياري): </label>
+                <input type="number" id="teacherId" min="1">
+                <button onclick="runDiagnosis()">تشغيل التشخيص</button>
+                <button onclick="clearLog()">مسح السجل</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 سجل التشخيص</h3>
+            <div id="log" class="log"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 بيانات المعلمين</h3>
+            <div id="teacherData" class="teacher-data"></div>
+        </div>
+        
+        <div class="test-section warning">
+            <h3>❓ المشاكل المحتملة</h3>
+            <ul>
+                <li><strong>مشكلة في قاعدة البيانات:</strong> عدم وجود بيانات في جدول teacher_subjects</li>
+                <li><strong>مشكلة في الاستعلام:</strong> GROUP_CONCAT يعيد NULL بدلاً من نص فارغ</li>
+                <li><strong>مشكلة في التحميل:</strong> البيانات لا تُحمل بشكل صحيح من الخادم</li>
+                <li><strong>مشكلة في العرض:</strong> الكود لا يعالج القيم NULL بشكل صحيح</li>
+                <li><strong>مشكلة في التخزين المؤقت:</strong> استخدام بيانات قديمة</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let authToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiY29kZSI6IlNDSC05ODgyMzEtNDY4IiwibmFtZSI6Ind3cSIsInJvbGUiOiJzY2hvb2wiLCJleHAiOjE3Njk4ODE2Mjh9.rm9TEIxoJ_OvQThbTbpJ3eb32O5IRIguE4OCvrbC8qE';
+        
+        function getAuthHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': authToken ? `Bearer ${authToken}` : ''
+            };
+        }
+        
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.innerHTML = `[${timestamp}] ${message}`;
+            entry.className = type;
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('teacherData').innerHTML = '';
+        }
+        
+        async function runDiagnosis() {
+            const schoolId = document.getElementById('schoolId').value;
+            const teacherId = document.getElementById('teacherId').value;
+            
+            if (!schoolId) {
+                alert('يرجى إدخال رمز المدرسة');
+                return;
+            }
+            
+            clearLog();
+            log(`بدء تشخيص مشكلة عرض المواد للمدرسة #${schoolId}`, 'info');
+            
+            try {
+                // Test 1: Check database connection and basic data
+                log('الخطوة 1: فحص الاتصال بقاعدة البيانات...', 'info');
+                const dbCheck = await checkDatabaseConnection(schoolId);
+                
+                // Test 2: Get teachers data
+                log('الخطوة 2: جلب بيانات المعلمين...', 'info');
+                const teachersData = await getTeachersData(schoolId, teacherId);
+                
+                // Test 3: Check subject assignments
+                log('الخطوة 3: فحص تعيين المواد...', 'info');
+                const subjectCheck = await checkSubjectAssignments(teachersData);
+                
+                // Test 4: Analyze display logic
+                log('الخطوة 4: تحليل منطق العرض...', 'info');
+                analyzeDisplayLogic(teachersData);
+                
+                // Display results
+                displayTeacherData(teachersData);
+                
+                log('✅ اكتمال التشخيص!', 'success');
+                
+            } catch (error) {
+                log(`✗ خطأ في التشخيص: ${error.message}`, 'error');
+                console.error('Diagnosis error:', error);
+            }
+        }
+        
+        async function checkDatabaseConnection(schoolId) {
+            try {
+                // Check if school exists
+                const schoolResponse = await fetch(`/api/school/${schoolId}`, {
+                    headers: getAuthHeaders()
+                });
+                
+                if (!schoolResponse.ok) {
+                    throw new Error('المدرسة غير موجودة');
+                }
+                
+                log('✓ الاتصال بقاعدة البيانات ناجح', 'success');
+                return true;
+                
+            } catch (error) {
+                log(`✗ مشكلة في الاتصال: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        async function getTeachersData(schoolId, teacherId) {
+            try {
+                let url = `/api/school/${schoolId}/teachers`;
+                if (teacherId) {
+                    url += `?teacher_id=${teacherId}`;
+                }
+                
+                const response = await fetch(url, {
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    throw new Error('فشل في جلب بيانات المعلمين');
+                }
+                
+                const data = await response.json();
+                const teachers = data.teachers || [];
+                
+                log(`✓ تم العثور على ${teachers.length} معلم`, 'success');
+                
+                // Log detailed teacher data
+                teachers.forEach((teacher, index) => {
+                    log(`المعلم ${index + 1}: ${teacher.full_name} (#${teacher.id})`, 'info');
+                    log(`  subject_names: ${teacher.subject_names || 'NULL'}`, 'info');
+                    log(`  subjects.length: ${teacher.subjects?.length || 0}`, 'info');
+                    if (teacher.subjects) {
+                        teacher.subjects.forEach((subject, subjIndex) => {
+                            log(`    المادة ${subjIndex + 1}: ${subject.name} (#${subject.id})`, 'info');
+                        });
+                    }
+                });
+                
+                return teachers;
+                
+            } catch (error) {
+                log(`✗ خطأ في جلب بيانات المعلمين: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        async function checkSubjectAssignments(teachers) {
+            const results = [];
+            
+            for (const teacher of teachers) {
+                try {
+                    const response = await fetch(`/api/teacher/${teacher.id}/subjects/assignments`, {
+                        headers: getAuthHeaders()
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        results.push({
+                            teacherId: teacher.id,
+                            teacherName: teacher.full_name,
+                            assignedSubjects: data.subjects || [],
+                            count: data.count || 0
+                        });
+                        
+                        log(`المعلم ${teacher.full_name}: لديه ${data.count || 0} مادة معينة`, 'info');
+                    } else {
+                        log(`المعلم ${teacher.full_name}: فشل في جلب المواد المعينة`, 'warning');
+                        results.push({
+                            teacherId: teacher.id,
+                            teacherName: teacher.full_name,
+                            assignedSubjects: [],
+                            count: 0,
+                            error: 'فشل في الطلب'
+                        });
+                    }
+                } catch (error) {
+                    log(`المعلم ${teacher.full_name}: خطأ في التحقق - ${error.message}`, 'error');
+                    results.push({
+                        teacherId: teacher.id,
+                        teacherName: teacher.full_name,
+                        assignedSubjects: [],
+                        count: 0,
+                        error: error.message
+                    });
+                }
+            }
+            
+            return results;
+        }
+        
+        function analyzeDisplayLogic(teachers) {
+            teachers.forEach((teacher, index) => {
+                const displayValue = teacher.subject_names || 
+                                   (teacher.subjects && teacher.subjects.length > 0 ? 
+                                    teacher.subjects.map(s => s.name).join(', ') : 
+                                    'غير محدد');
+                
+                const isUndefined = displayValue === 'غير محدد';
+                
+                log(`تحليل عرض المعلم ${teacher.full_name}:`, isUndefined ? 'error' : 'success');
+                log(`  subject_names: ${teacher.subject_names || 'NULL'}`, 'info');
+                log(`  subjects: ${teacher.subjects?.length || 0} عنصر`, 'info');
+                log(`  القيمة المعروضة: ${displayValue}`, isUndefined ? 'error' : 'success');
+                
+                if (isUndefined) {
+                    if (!teacher.subject_names && (!teacher.subjects || teacher.subjects.length === 0)) {
+                        log(`  ✗ المشكلة: لا توجد بيانات للمواد`, 'error');
+                    } else if (teacher.subject_names === null) {
+                        log(`  ✗ المشكلة: subject_names = NULL في قاعدة البيانات`, 'error');
+                    } else {
+                        log(`  ؟ المشكلة تحتاج تحليل إضافي`, 'warning');
+                    }
+                }
+            });
+        }
+        
+        function displayTeacherData(teachers) {
+            const container = document.getElementById('teacherData');
+            container.innerHTML = '';
+            
+            teachers.forEach(teacher => {
+                const displayValue = teacher.subject_names || 
+                                   (teacher.subjects && teacher.subjects.length > 0 ? 
+                                    teacher.subjects.map(s => s.name).join(', ') : 
+                                    'غير محدد');
+                
+                const isUndefined = displayValue === 'غير محدد';
+                
+                const card = document.createElement('div');
+                card.className = 'teacher-card';
+                card.innerHTML = `
+                    <h4>${teacher.full_name}</h4>
+                    <p><strong>الرمز:</strong> ${teacher.teacher_code}</p>
+                    <p><strong>الصف:</strong> ${teacher.grade_level}</p>
+                    <p><strong>المادة المعروضة:</strong> 
+                        <span class="subject-display ${isUndefined ? 'undefined' : 'defined'}">
+                            ${displayValue}
+                        </span>
+                    </p>
+                    <p><strong>subject_names (DB):</strong> ${teacher.subject_names || 'NULL'}</p>
+                    <p><strong>subjects (Array):</strong> ${teacher.subjects?.length || 0} عنصر</p>
+                    ${teacher.subjects ? `
+                        <p><strong>المواد التفصيلية:</strong></p>
+                        <ul>
+                            ${teacher.subjects.map(s => `<li>${s.name} (#${s.id})</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html>

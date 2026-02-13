@@ -216,12 +216,13 @@ function analyzeGradeTrend(grades, maxGrade) {
 }
 
 // ============================================================================
-// PROFESSIONAL ACADEMIC RECOMMENDATION SYSTEM
+// PROFESSIONAL ACADEMIC RECOMMENDATION SYSTEM - ENHANCED
 // ============================================================================
 
 /**
- * Generate comprehensive, professional academic recommendations
- * Provides actionable guidance for students, educators, and parents
+ * Generate professional, concise academic recommendations
+ * Clean, organized structure for quick scanning
+ * Maximum 1-2 focused recommendations per section
  */
 class AcademicRecommendationEngine {
     constructor(student, gradesData, maxGrade, thresholds) {
@@ -321,260 +322,206 @@ class AcademicRecommendationEngine {
 
     getPerformanceLevel() {
         const pct = this.analysis.overallPercentage;
-        if (pct >= 90) return { level: 'excellent', label: 'متميز', icon: '🌟' };
-        if (pct >= 80) return { level: 'very-good', label: 'جيد جداً', icon: '⭐' };
-        if (pct >= 70) return { level: 'good', label: 'جيد', icon: '✅' };
-        if (pct >= 60) return { level: 'satisfactory', label: 'مقبول', icon: '🟡' };
-        if (pct >= 50) return { level: 'at-risk', label: 'في منطقة الخطر', icon: '⚠️' };
-        return { level: 'critical', label: 'يحتاج تدخل عاجل', icon: '🚨' };
+        if (pct >= 90) return { level: 'excellent', label: 'متميز', icon: 'fa-star', color: '#10b981', bgColor: '#d1fae5' };
+        if (pct >= 80) return { level: 'very-good', label: 'جيد جداً', icon: 'fa-star-half-alt', color: '#3b82f6', bgColor: '#dbeafe' };
+        if (pct >= 70) return { level: 'good', label: 'جيد', icon: 'fa-check-circle', color: '#22c55e', bgColor: '#dcfce7' };
+        if (pct >= 60) return { level: 'satisfactory', label: 'مقبول', icon: 'fa-exclamation-circle', color: '#f59e0b', bgColor: '#fef3c7' };
+        if (pct >= 50) return { level: 'at-risk', label: 'يحتاج متابعة', icon: 'fa-exclamation-triangle', color: '#f97316', bgColor: '#ffedd5' };
+        return { level: 'critical', label: 'تدخل عاجل', icon: 'fa-times-circle', color: '#ef4444', bgColor: '#fee2e2' };
     }
 
-    generateExecutiveSummary() {
+    /**
+     * Generate structured recommendations object
+     * Maximum 1-2 items per section for conciseness
+     */
+    generateStructuredRecommendations() {
         const a = this.analysis;
         const perf = this.getPerformanceLevel();
-        const summary = [];
-
-        summary.push(`${perf.icon} التقييم العام: ${perf.label}`);
-        summary.push(`المعدل العام: ${a.overallAvg.toFixed(1)}/${this.maxGrade} (${a.overallPercentage.toFixed(0)}%)`);
         
-        const stats = [];
-        if (a.strongSubjects.length > 0) stats.push(`${a.strongSubjects.length} مواد متفوقة`);
-        if (a.moderateSubjects.length > 0) stats.push(`${a.moderateSubjects.length} مواد متوسطة`);
-        if (a.weakSubjects.length > 0) stats.push(`${a.weakSubjects.length} مواد تحتاج تطوير`);
-        if (stats.length > 0) summary.push(`التوزيع: ${stats.join(' | ')}`);
-
-        return summary;
-    }
-
-    generateStrengthsAnalysis() {
-        const a = this.analysis;
+        // Strengths - Max 2 items
         const strengths = [];
-
-        if (a.strongSubjects.length === 0 && a.improvingSubjects.length === 0) {
-            return ['💪 نقاط القوة:', '  • لم يتم تحديد نقاط قوة واضحة بعد - يُنصح بالتركيز على بناء أساس قوي في جميع المواد'];
-        }
-
-        strengths.push('💪 نقاط القوة والتميز:');
-
         if (a.strongSubjects.length > 0) {
-            a.strongSubjects.forEach(s => {
-                let msg = `  • ${s.name}: أداء متميز (${s.average.toFixed(1)}/${this.maxGrade})`;
-                if (s.trend.trend === 'improving') msg += ' مع مسار تصاعدي مستمر';
-                if (s.consistency === 'consistent') msg += ' وأداء مستقر';
-                strengths.push(msg);
+            const top = a.strongSubjects[0];
+            strengths.push({
+                subject: top.name,
+                detail: `${top.average.toFixed(1)}/${this.maxGrade}`,
+                trend: top.trend.trend === 'improving' ? '📈' : ''
             });
-        }
-
-        const improvingNotStrong = a.improvingSubjects.filter(
-            s => !a.strongSubjects.find(str => str.name === s.name)
-        );
-        if (improvingNotStrong.length > 0) {
-            strengths.push('  ✔️ مواد تظهر تحسناً ملحوظاً:');
-            improvingNotStrong.forEach(s => {
-                if (s.trend.hadZeroBeforeGoodGrade) {
-                    strengths.push(`    - ${s.name}: قفزة نوعية من 0 إلى ${s.trend.latestGrade}/${this.maxGrade}`);
-                } else {
-                    strengths.push(`    - ${s.name}: تحسن من ${s.trend.firstGrade} إلى ${s.trend.latestGrade}/${this.maxGrade}`);
-                }
-            });
-        }
-
-        return strengths;
-    }
-
-    generateAreasForImprovement() {
-        const a = this.analysis;
-        const areas = ['🎯 المجالات التي تحتاج تطوير:'];
-
-        if (a.weakSubjects.length > 0) {
-            areas.push('  🚨 مواد تحتاج اهتمام فوري:');
-            a.weakSubjects.forEach(s => {
-                let msg = `    • ${s.name} (${s.average.toFixed(1)}/${this.maxGrade})`;
-                if (s.trend.hasDeterioration) {
-                    msg += ' - مسار تنازلي يتطلب تدخل عاجل';
-                } else if (s.trend.hasImprovement) {
-                    msg += ' - يظهر تحسناً، استمر!';
-                }
-                areas.push(msg);
-            });
-        }
-
-        if (a.moderateSubjects.length > 0) {
-            areas.push('  ⚠️ مواد في منطقة الخطر (تحتاج متابعة):');
-            a.moderateSubjects.forEach(s => {
-                const gap = this.thresholds.safeThreshold - s.average;
-                areas.push(`    • ${s.name} (${s.average.toFixed(1)}/${this.maxGrade}) - يحتاج ${gap.toFixed(1)} درجة للمنطقة الآمنة`);
-            });
-        }
-
-        const decliningNotWeak = a.decliningSubjects.filter(
-            s => !a.weakSubjects.find(w => w.name === s.name)
-        );
-        if (decliningNotWeak.length > 0) {
-            areas.push('  📉 مواد تشهد تراجعاً:');
-            decliningNotWeak.forEach(s => {
-                areas.push(`    • ${s.name}: انخفض من ${s.trend.firstGrade} إلى ${s.trend.latestGrade}/${this.maxGrade}`);
-            });
-        }
-
-        if (a.inconsistentSubjects.length > 0) {
-            areas.push('  ⚡ مواد بأداء متذبذب:');
-            a.inconsistentSubjects.forEach(s => {
-                areas.push(`    • ${s.name}: تفاوت كبير في الدرجات يدل على عدم استقرار في التحصيل`);
-            });
-        }
-
-        if (a.missedAssessments.length > 0) {
-            areas.push('  📋 تقييمات مفقودة:');
-            const grouped = {};
-            a.missedAssessments.forEach(m => {
-                if (!grouped[m.subject]) grouped[m.subject] = [];
-                grouped[m.subject].push(m.period);
-            });
-            for (const subj in grouped) {
-                areas.push(`    • ${subj}: ${grouped[subj].join('، ')}`);
+            if (a.strongSubjects.length > 1) {
+                const second = a.strongSubjects[1];
+                strengths.push({
+                    subject: second.name,
+                    detail: `${second.average.toFixed(1)}/${this.maxGrade}`,
+                    trend: second.trend.trend === 'improving' ? '📈' : ''
+                });
             }
-        }
-
-        if (areas.length === 1) {
-            areas.push('  ✅ لا توجد مجالات تحتاج تطوير عاجل - استمر على هذا المستوى!');
-        }
-
-        return areas;
-    }
-
-    generateActionPlanForStudent() {
-        const a = this.analysis;
-        const perf = this.getPerformanceLevel();
-        const actions = ['📝 خطة العمل للطالب:'];
-
-        if (perf.level === 'excellent' || perf.level === 'very-good') {
-            actions.push('  1️⃣ الحفاظ على التميز:');
-            actions.push('     • استمر في نفس أسلوب الدراسة الفعّال');
-            actions.push('     • شارك في المسابقات والأنشطة الإثرائية');
-            actions.push('     • ساعد زملاءك لتعزيز فهمك');
-        } else if (perf.level === 'good' || perf.level === 'satisfactory') {
-            actions.push('  1️⃣ رفع المستوى:');
-            actions.push('     • خصص 30 دقيقة إضافية يومياً للمراجعة');
-            actions.push('     • ركز على فهم المفاهيم بدل الحفظ');
-            actions.push('     • اطلب المساعدة عند عدم الفهم');
-        } else {
-            actions.push('  1️⃣ خطة الإنقاذ العاجلة:');
-            actions.push('     • التزم بجدول دراسي صارم (2-3 ساعات يومياً)');
-            actions.push('     • احضر جميع دروس التقوية المتاحة');
-            actions.push('     • اسأل المعلم عن أي نقطة غير واضحة');
-        }
-
-        if (a.weakSubjects.length > 0) {
-            actions.push('  2️⃣ أولويات التركيز:');
-            a.weakSubjects.slice(0, 3).forEach((s, i) => {
-                actions.push(`     ${i + 1}. ${s.name} - الهدف: رفع المعدل إلى ${this.thresholds.passThreshold}/${this.maxGrade}`);
+        } else if (a.improvingSubjects.length > 0) {
+            const imp = a.improvingSubjects[0];
+            strengths.push({
+                subject: imp.name,
+                detail: `تحسن (${imp.trend.firstGrade} → ${imp.trend.latestGrade})`,
+                trend: '📈'
             });
+        }
+        if (strengths.length === 0) {
+            strengths.push({ subject: 'جاري التقييم', detail: '', trend: '' });
+        }
+
+        // Areas for Improvement - Max 2 items
+        const improvements = [];
+        if (a.weakSubjects.length > 0) {
+            const weak = a.weakSubjects[0];
+            improvements.push({
+                subject: weak.name,
+                detail: `${weak.average.toFixed(1)}/${this.maxGrade}`,
+                priority: 'عاجل'
+            });
+            if (a.weakSubjects.length > 1) {
+                const weak2 = a.weakSubjects[1];
+                improvements.push({
+                    subject: weak2.name,
+                    detail: `${weak2.average.toFixed(1)}/${this.maxGrade}`,
+                    priority: 'عاجل'
+                });
+            }
         } else if (a.moderateSubjects.length > 0) {
-            actions.push('  2️⃣ أولويات التركيز:');
-            a.moderateSubjects.slice(0, 3).forEach((s, i) => {
-                actions.push(`     ${i + 1}. ${s.name} - الهدف: رفع المعدل إلى ${this.thresholds.safeThreshold}/${this.maxGrade}`);
+            const mod = a.moderateSubjects[0];
+            const gap = (this.thresholds.safeThreshold - mod.average).toFixed(1);
+            improvements.push({
+                subject: mod.name,
+                detail: `يحتاج +${gap} نقطة`,
+                priority: 'متوسط'
+            });
+        } else if (a.decliningSubjects.length > 0) {
+            const dec = a.decliningSubjects[0];
+            improvements.push({
+                subject: dec.name,
+                detail: `تراجع (${dec.trend.firstGrade} → ${dec.trend.latestGrade})`,
+                priority: 'متوسط'
             });
         }
-
-        actions.push('  3️⃣ استراتيجيات النجاح:');
-        if (a.inconsistentSubjects.length > 0) {
-            actions.push('     • ضع جدولاً دراسياً منتظماً والتزم به');
+        if (improvements.length === 0) {
+            improvements.push({ subject: 'لا توجد', detail: 'أداء جيد', priority: '' });
         }
-        actions.push('     • راجع الدروس في نفس اليوم');
-        actions.push('     • حل التمارين والواجبات أولاً بأول');
-        actions.push('     • استخدم تقنيات التلخيص والخرائط الذهنية');
 
-        return actions;
+        // Action Plan - Max 2 items
+        const actions = [];
+        if (perf.level === 'critical' || perf.level === 'at-risk') {
+            actions.push('جدول دراسي يومي مكثف');
+            actions.push('حضور دروس التقوية');
+        } else if (perf.level === 'satisfactory') {
+            actions.push('زيادة وقت المراجعة');
+            actions.push('التركيز على المفاهيم الأساسية');
+        } else if (perf.level === 'good' || perf.level === 'very-good') {
+            actions.push('المحافظة على المستوى الحالي');
+            actions.push('توسيع المعرفة');
+        } else {
+            actions.push('الاستمرار في التفوق');
+            actions.push('المشاركة في الأنشطة الإثرائية');
+        }
+
+        // Priority subjects
+        if (a.weakSubjects.length > 0) {
+            const prioritySubjects = a.weakSubjects.slice(0, 2).map(s => s.name).join('، ');
+            // Replace second action with priority subjects
+            actions[1] = `التركيز على: ${prioritySubjects}`;
+        }
+
+        return {
+            performance: {
+                level: perf.level,
+                label: perf.label,
+                icon: perf.icon,
+                color: perf.color,
+                bgColor: perf.bgColor,
+                average: `${a.overallAvg.toFixed(1)}/${this.maxGrade}`,
+                percentage: `${a.overallPercentage.toFixed(0)}%`
+            },
+            strengths: strengths,
+            improvements: improvements,
+            actions: actions
+        };
     }
 
-    generateGuidanceForEducators() {
-        const a = this.analysis;
-        const perf = this.getPerformanceLevel();
-        const guidance = ['👨‍🏫 توجيهات للمعلمين وأولياء الأمور:'];
+    /**
+     * Generate clean HTML for recommendations
+     * Professional card-based layout
+     */
+    generateHTML() {
+        const rec = this.generateStructuredRecommendations();
+        const p = rec.performance;
+        
+        return `
+            <div class="academic-guidance">
+                <!-- Performance Summary Card -->
+                <div class="guidance-card performance-card" style="background: ${p.bgColor}; border-right: 4px solid ${p.color};">
+                    <div class="card-header">
+                        <i class="fas ${p.icon}" style="color: ${p.color};"></i>
+                        <span class="performance-label" style="color: ${p.color};">${p.label}</span>
+                    </div>
+                    <div class="card-content">
+                        <span class="performance-value">${p.average}</span>
+                        <span class="performance-percentage">(${p.percentage})</span>
+                    </div>
+                </div>
 
-        if (perf.level === 'critical' || perf.level === 'at-risk') {
-            guidance.push('  🚨 إجراءات عاجلة مطلوبة:');
-            guidance.push('     • عقد اجتماع فوري مع ولي الأمر');
-            guidance.push('     • إعداد خطة تقوية فردية للطالب');
-            guidance.push('     • المتابعة الأسبوعية للتقدم');
-            if (a.weakSubjects.length > 0) {
-                guidance.push(`     • التركيز على: ${a.weakSubjects.map(s => s.name).join('، ')}`);
-            }
-        } else if (perf.level === 'satisfactory') {
-            guidance.push('  📌 توصيات للمتابعة:');
-            guidance.push('     • متابعة دورية كل أسبوعين');
-            guidance.push('     • تشجيع المشاركة الصفية');
-            guidance.push('     • توفير موارد تعليمية إضافية');
-        } else {
-            guidance.push('  ✅ التوصيات:');
-            guidance.push('     • الحفاظ على التواصل الإيجابي');
-            guidance.push('     • تشجيع التفوق والتميز');
-            guidance.push('     • إشراك الطالب في أنشطة القيادة');
-        }
+                <div class="guidance-grid">
+                    <!-- Strengths Card -->
+                    <div class="guidance-card strengths-card">
+                        <div class="card-title">
+                            <i class="fas fa-thumbs-up"></i>
+                            نقاط القوة
+                        </div>
+                        <ul class="guidance-list">
+                            ${rec.strengths.map(s => `
+                                <li>
+                                    <span class="subject-name">${s.subject}</span>
+                                    <span class="subject-detail">${s.detail} ${s.trend}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
 
-        if (a.decliningSubjects.length > 0) {
-            guidance.push('  📉 ملاحظة هامة:');
-            guidance.push(`     • هناك تراجع في: ${a.decliningSubjects.map(s => s.name).join('، ')}`);
-            guidance.push('     • يُنصح بالتحقق من الأسباب (نفسية/اجتماعية/أكاديمية)');
-        }
+                    <!-- Improvements Card -->
+                    <div class="guidance-card improvements-card">
+                        <div class="card-title">
+                            <i class="fas fa-bullseye"></i>
+                            مجالات التطوير
+                        </div>
+                        <ul class="guidance-list">
+                            ${rec.improvements.map(i => `
+                                <li>
+                                    <span class="subject-name">${i.subject}</span>
+                                    ${i.priority ? `<span class="priority-badge">${i.priority}</span>` : ''}
+                                    <span class="subject-detail">${i.detail}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
 
-        if (a.improvingSubjects.length > 0 && (perf.level === 'critical' || perf.level === 'at-risk')) {
-            guidance.push('  🌟 نقطة إيجابية:');
-            guidance.push(`     • هناك تحسن في: ${a.improvingSubjects.map(s => s.name).join('، ')}`);
-            guidance.push('     • يُنصح بتعزيز هذا التقدم بالتشجيع والدعم');
-        }
-
-        return guidance;
-    }
-
-    generateTimeline() {
-        const a = this.analysis;
-        const perf = this.getPerformanceLevel();
-        const timeline = ['📅 الجدول الزمني المقترح:'];
-
-        if (perf.level === 'critical' || perf.level === 'at-risk') {
-            timeline.push('  الأسبوع الأول:');
-            timeline.push('     • اجتماع مع ولي الأمر ووضع خطة');
-            timeline.push('  الأسبوع 2-4:');
-            timeline.push('     • تنفيذ خطة التقوية المكثفة');
-            timeline.push('  نهاية الشهر:');
-            timeline.push('     • تقييم التقدم وتعديل الخطة');
-        } else if (perf.level === 'satisfactory') {
-            timeline.push('  أسبوعياً:');
-            timeline.push('     • مراجعة دورية للدروس');
-            timeline.push('  شهرياً:');
-            timeline.push('     • تقييم التقدم نحو المنطقة الآمنة');
-        } else {
-            timeline.push('  مستمر:');
-            timeline.push('     • الحفاظ على الروتين الدراسي الحالي');
-            timeline.push('     • تحديد أهداف جديدة للتميز');
-        }
-
-        return timeline;
+                    <!-- Action Plan Card -->
+                    <div class="guidance-card actions-card">
+                        <div class="card-title">
+                            <i class="fas fa-tasks"></i>
+                            خطة العمل
+                        </div>
+                        <ul class="guidance-list action-list">
+                            ${rec.actions.map(a => `
+                                <li>
+                                    <i class="fas fa-chevron-left"></i>
+                                    ${a}
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     generateFullReport() {
-        const report = [];
-        
-        report.push(...this.generateExecutiveSummary());
-        report.push('');
-        report.push(...this.generateStrengthsAnalysis());
-        report.push('');
-        report.push(...this.generateAreasForImprovement());
-        report.push('');
-        report.push(...this.generateActionPlanForStudent());
-        report.push('');
-        report.push(...this.generateGuidanceForEducators());
-        report.push('');
-        report.push(...this.generateTimeline());
-        report.push('');
-        report.push('📊 معلومات التقييم:');
-        report.push(`  • مقياس الدرجات: ${this.maxGrade}`);
-        report.push(`  • درجة النجاح: ${this.thresholds.passThreshold}/${this.maxGrade}`);
-        report.push(`  • المنطقة الآمنة: ${this.thresholds.safeThreshold}/${this.maxGrade}+`);
-        
-        return report;
+        // Return structured HTML for display
+        return this.generateHTML();
     }
 }
 
@@ -591,7 +538,9 @@ class PerformanceModel {
             score: 0, 
             recommendations: ['لا توجد بيانات كافية'],
             riskLevel: 'unknown',
-            subjectTrends: {}
+            subjectTrends: {},
+            passFailPrediction: { status: 'غير محدد', confidence: 0, message: 'لا توجد بيانات كافية', icon: '❓' },
+            subjectPredictions: {}
         };
         
         let totalGrades = 0;
@@ -604,6 +553,7 @@ class PerformanceModel {
         let improvingSubjects = [];
         let decliningSubjects = [];
         let inconsistentSubjects = [];
+        let subjectPredictions = {};
         
         // Get thresholds for this student's grade level
         const thresholds = getGradeThresholds(student);
@@ -617,6 +567,9 @@ class PerformanceModel {
             // Analyze trend for this subject
             const trendAnalysis = analyzeGradeTrend(subjectGrades, maxGrade);
             subjectTrends[subject] = trendAnalysis;
+            
+            // Predict future grades for this subject
+            subjectPredictions[subject] = this.predictSubjectGrades(subjectGrades, trendAnalysis, maxGrade);
             
             for (const period in subjectGrades) {
                 const grade = parseInt(subjectGrades[period]) || 0;
@@ -635,7 +588,8 @@ class PerformanceModel {
                     name: subject, 
                     avg: subjectAvg, 
                     trend: trendAnalysis,
-                    latestGrade: trendAnalysis.latestGrade
+                    latestGrade: trendAnalysis.latestGrade,
+                    prediction: subjectPredictions[subject]
                 };
                 
                 // Classify subjects based on thresholds
@@ -685,6 +639,12 @@ class PerformanceModel {
             riskLevel = 'fail';
         }
 
+        // Calculate pass/fail prediction
+        const passFailPrediction = this.calculatePassFailPrediction(
+            rawAvg, thresholds, subjectPredictions, poorSubjects.length, 
+            atRiskSubjects.length, safeSubjects.length
+        );
+
         // Generate professional comprehensive recommendations
         const recommendations = generateProfessionalRecommendations(student, student.grades, maxGrade, thresholds);
 
@@ -702,7 +662,156 @@ class PerformanceModel {
             inconsistentSubjects,
             poorSubjects,
             atRiskSubjects,
-            safeSubjects
+            safeSubjects,
+            passFailPrediction,
+            subjectPredictions
+        };
+    }
+
+    // Predict future grades for a subject based on trend analysis
+    predictSubjectGrades(subjectGrades, trendAnalysis, maxGrade) {
+        const periods = ['month1', 'month2', 'midterm', 'month3', 'month4', 'final'];
+        const periodNames = {
+            'month1': 'شهر أول',
+            'month2': 'شهر ثاني', 
+            'midterm': 'نصف السنة',
+            'month3': 'شهر ثالث',
+            'month4': 'شهر رابع',
+            'final': 'نهائي'
+        };
+        
+        // Get existing grades
+        const existingGrades = {};
+        const missingPeriods = [];
+        
+        periods.forEach(period => {
+            const grade = parseInt(subjectGrades[period]) || 0;
+            if (grade > 0) {
+                existingGrades[period] = grade;
+            } else {
+                missingPeriods.push(period);
+            }
+        });
+
+        // If all periods have grades, no prediction needed
+        if (missingPeriods.length === 0) {
+            return {
+                currentAverage: trendAnalysis.avgGrade || 0,
+                predictedAverage: trendAnalysis.avgGrade || 0,
+                missingPeriods: [],
+                forecast: {}
+            };
+        }
+
+        // Calculate prediction based on trend
+        let predictedGrade = trendAnalysis.latestGrade || trendAnalysis.avgGrade || (maxGrade * 0.6);
+        
+        // Adjust based on trend direction
+        if (trendAnalysis.trend === 'improving') {
+            predictedGrade = Math.min(maxGrade, predictedGrade * 1.05); // 5% improvement
+        } else if (trendAnalysis.trend === 'declining') {
+            predictedGrade = Math.max(0, predictedGrade * 0.95); // 5% decline
+        }
+
+        // Generate forecast for missing periods
+        const forecast = {};
+        missingPeriods.forEach(period => {
+            // Add some variation to make predictions more realistic
+            const variation = (Math.random() - 0.5) * (maxGrade * 0.1); // ±5% variation
+            let periodPrediction = Math.round(Math.max(0, Math.min(maxGrade, predictedGrade + variation)));
+            
+            // Ensure passing grade if student is improving
+            if (trendAnalysis.trend === 'improving' && periodPrediction < maxGrade * 0.5) {
+                periodPrediction = Math.round(maxGrade * 0.55);
+            }
+            
+            forecast[period] = {
+                grade: periodPrediction,
+                periodName: periodNames[period]
+            };
+        });
+
+        // Calculate predicted final average
+        let totalPredicted = Object.values(existingGrades).reduce((a, b) => a + b, 0);
+        Object.values(forecast).forEach(f => totalPredicted += f.grade);
+        const predictedAverage = Math.round(totalPredicted / periods.length);
+
+        return {
+            currentAverage: trendAnalysis.avgGrade || 0,
+            predictedAverage: predictedAverage,
+            missingPeriods: missingPeriods,
+            forecast: forecast
+        };
+    }
+
+    // Calculate pass/fail prediction based on current performance and trends
+    calculatePassFailPrediction(rawAvg, thresholds, subjectPredictions, poorCount, atRiskCount, safeCount) {
+        const totalSubjects = poorCount + atRiskCount + safeCount;
+        if (totalSubjects === 0) return { status: 'غير محدد', confidence: 0, message: 'لا توجد بيانات كافية', icon: '❓' };
+
+        // Calculate weighted prediction based on subject categories
+        const poorWeight = poorCount * 0;
+        const atRiskWeight = atRiskCount * 0.5;
+        const safeWeight = safeCount * 1;
+        const passProbability = (poorWeight + atRiskWeight + safeWeight) / totalSubjects;
+
+        // Analyze predicted averages
+        let subjectsPredictedToPass = 0;
+        let subjectsPredictedToFail = 0;
+        
+        for (const subject in subjectPredictions) {
+            const pred = subjectPredictions[subject];
+            if (pred.predictedAverage >= thresholds.passThreshold) {
+                subjectsPredictedToPass++;
+            } else {
+                subjectsPredictedToFail++;
+            }
+        }
+
+        // Determine final prediction
+        let status, confidence, message, icon;
+        
+        if (rawAvg >= thresholds.safeThreshold) {
+            status = 'ناجح';
+            confidence = 95;
+            message = 'أداء متميز - المتوقع النجاح بدرجات عالية';
+            icon = '✅';
+        } else if (rawAvg >= thresholds.passThreshold) {
+            if (subjectsPredictedToFail === 0) {
+                status = 'ناجح';
+                confidence = 80;
+                message = 'على المسار الصحيح - المتوقع النجاح';
+                icon = '✅';
+            } else {
+                status = 'ناجح بصعوبة';
+                confidence = 65;
+                message = 'على حدود النجاح - يحتاج مزيد من الجهد';
+                icon = '⚠️';
+            }
+        } else {
+            // Below passing threshold
+            const improving = Object.values(subjectPredictions).some(p => p.predictedAverage > rawAvg);
+            if (improving) {
+                status = 'راسب (قابل للتحسن)';
+                confidence = 40;
+                message = 'حالياً راسب لكن التحسن ممكن بالاجتهاد';
+                icon = '⚠️';
+            } else {
+                status = 'راسب';
+                confidence = 85;
+                message = 'تحذير: المتوقع الرسوب بدون تدخل عاجل';
+                icon = '❌';
+            }
+        }
+
+        return {
+            status,
+            confidence,
+            message,
+            icon,
+            passProbability: Math.round(passProbability * 100),
+            subjectsPredictedToPass,
+            subjectsPredictedToFail
         };
     }
 
@@ -743,6 +852,109 @@ function generateRecommendations(avgPerformance, avgGrade, attendanceRate) {
 }
 
 let aiModel = new PerformanceModel();
+
+// Display performance insights in the grades modal
+function displayPerformanceInsights(student) {
+    const model = new PerformanceModel();
+    const prediction = model.predictPerformance(student);
+    
+    // Update main insight cards
+    const avgGradeEl = document.getElementById('studentAvgGrade');
+    const performanceEl = document.getElementById('studentPerformancePrediction');
+    const passFailEl = document.getElementById('passFailPrediction');
+    const recommendationsEl = document.getElementById('studentRecommendations');
+    
+    if (avgGradeEl) {
+        avgGradeEl.textContent = `${prediction.rawAvg.toFixed(1)}/${prediction.maxGrade}`;
+    }
+    
+    if (performanceEl) {
+        const levelText = {
+            'excellent': 'ممتاز',
+            'good': 'جيد',
+            'average': 'متوسط',
+            'needs-improvement': 'يحتاج تحسين'
+        };
+        performanceEl.textContent = levelText[prediction.level] || prediction.level;
+        performanceEl.className = `insight-value ${prediction.riskLevel}`;
+    }
+    
+    if (passFailEl) {
+        passFailEl.textContent = `${prediction.passFailPrediction.icon} ${prediction.passFailPrediction.status}`;
+        passFailEl.className = `insight-value ${prediction.passFailPrediction.status.includes('ناجح') ? 'safe' : 'fail'}`;
+    }
+    
+    if (recommendationsEl) {
+        recommendationsEl.innerHTML = prediction.recommendations;
+    }
+    
+    // Show prediction details
+    const predictionDetailsBox = document.getElementById('predictionDetailsBox');
+    const predictionMessage = document.getElementById('predictionMessage');
+    const predictionConfidence = document.getElementById('predictionConfidence');
+    
+    if (predictionDetailsBox && predictionMessage && predictionConfidence) {
+        predictionDetailsBox.style.display = 'block';
+        predictionMessage.textContent = prediction.passFailPrediction.message;
+        predictionConfidence.textContent = `نسبة الثقة: ${prediction.passFailPrediction.confidence}%`;
+        
+        // Update border color based on status
+        if (prediction.passFailPrediction.status.includes('ناجح')) {
+            predictionDetailsBox.style.borderRightColor = '#28a745';
+        } else if (prediction.passFailPrediction.status.includes('راسب')) {
+            predictionDetailsBox.style.borderRightColor = '#dc3545';
+        } else {
+            predictionDetailsBox.style.borderRightColor = '#ffc107';
+        }
+    }
+    
+    // Display forecasted grades
+    const forecastSection = document.getElementById('forecastSection');
+    const forecastContainer = document.getElementById('forecastContainer');
+    
+    if (forecastSection && forecastContainer) {
+        // Check if there are any forecasts to show
+        let hasForecasts = false;
+        let forecastHTML = '';
+        
+        for (const subject in prediction.subjectPredictions) {
+            const pred = prediction.subjectPredictions[subject];
+            if (pred.missingPeriods.length > 0) {
+                hasForecasts = true;
+                forecastHTML += `
+                    <div class="forecast-subject" style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h4 style="margin: 0 0 0.5rem 0; color: var(--brand-primary-700);">${subject}</h4>
+                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
+                            المتوسط الحالي: ${pred.currentAverage.toFixed(1)}/${prediction.maxGrade}
+                        </div>
+                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
+                            المتوسط المتوقع: ${pred.predictedAverage}/${prediction.maxGrade}
+                        </div>
+                        <div class="forecast-periods" style="margin-top: 0.5rem;">
+                `;
+                
+                for (const period in pred.forecast) {
+                    const forecast = pred.forecast[period];
+                    forecastHTML += `
+                        <div class="forecast-item" style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #eee;">
+                            <span>${forecast.periodName}:</span>
+                            <span style="font-weight: 600; color: var(--brand-primary-600);">${forecast.grade}/${prediction.maxGrade}</span>
+                        </div>
+                    `;
+                }
+                
+                forecastHTML += '</div></div>';
+            }
+        }
+        
+        if (hasForecasts) {
+            forecastSection.style.display = 'block';
+            forecastContainer.innerHTML = forecastHTML;
+        } else {
+            forecastSection.style.display = 'none';
+        }
+    }
+}
 
 // Chart instances
 let gradesChart = null;
@@ -901,11 +1113,8 @@ function setupEventListeners() {
         }
     });
     
-    // Add event listener for the open subjects modal button
-    const openSubjectsModalBtn = document.getElementById('openSubjectsModalBtn');
-    if (openSubjectsModalBtn) {
-        openSubjectsModalBtn.addEventListener('click', openSubjectsModal);
-    }
+    // Add event listener for performance analytics button
+    // No additional button event listeners needed as the buttons are now inline
 }
 
 function showDashboard() {
@@ -969,9 +1178,6 @@ function renderGradeLevelsUI() {
     let html = `
         <div class="grade-levels-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h3 style="margin: 0;"><i class="fas fa-layer-group"></i> المستويات الدراسية</h3>
-            <button class="btn-primary-school btn-small" onclick="showAddGradeLevelModal()">
-                <i class="fas fa-plus"></i> إضافة مستوى
-            </button>
         </div>
         <div class="grades-grid">
     `;
@@ -1177,31 +1383,16 @@ function loadGradeSubjectsForLevel(combinedGradeLevel, originalGradeLevel) {
     if (!gradeLevel) {
         document.getElementById('gradeLevelContent').innerHTML = `
             <div class="placeholder-message">
-                <p>يرجى اختيار صف لعرض المواد والطلاب</p>
+                <p>يرجى اختيار صف لعرض الطلاب</p>
             </div>
         `;
-        
-        // Hide the open subjects modal button since no grade level is selected
-        const openSubjectsModalBtn = document.getElementById('openSubjectsModalBtn');
-        if (openSubjectsModalBtn) {
-            openSubjectsModalBtn.style.display = 'none';
-        }
-        
         return;
     }
-    
-    // Filter subjects for the selected grade level and sort alphabetically
-    const gradeLevelSubjects = (gradeSubjects[gradeLevel] || []).slice().sort((a, b) => 
-        a.name.localeCompare(b.name, 'ar')
-    );
     
     // Filter students for the selected grade level and sort alphabetically
     const gradeLevelStudents = students
         .filter(student => {
             if (student.grade) {
-                // For the grade level selection, we're looking for exact matches
-                // The student.grade contains the full combined string like "إعدادية - الرابع الأدبي"
-                // The combinedGradeLevel contains the same format
                 return student.grade === combinedGradeLevel;
             }
             return false;
@@ -1219,394 +1410,103 @@ function loadGradeSubjectsForLevel(combinedGradeLevel, originalGradeLevel) {
         }
     });
     
-    // Re-render table with filtered students
-
-    // Generate HTML for the grade level content
+    // Generate HTML for the grade level content - only students, no teacher/subject management
     let html = `
         <section class="section-card">
-            <h2 class="h2-school section-title"><i class="fas fa-book"></i> المواد الدراسية - ${combinedGradeLevel || gradeLevel}</h2>
+            <h2 class="h2-school section-title">
+                <i class="fas fa-users"></i> الطلاب - ${combinedGradeLevel || gradeLevel}
+                <span style="font-size: 0.9rem; color: var(--text-secondary);">(${uniqueStudents.length} طالب)</span>
+            </h2>
             
-            <!-- Add Subject Button - Positioned at top -->
-            <div class="subjects-header">
-                <button type="button" class="btn-add-subject" onclick="showAddSubjectForm('${gradeLevel}')">
-                    <i class="fas fa-plus"></i> إضافة مادة دراسية | Add Subject
+            <div class="students-header" style="margin-bottom: 1rem;">
+                <button type="button" class="btn-primary-school btn-small" onclick="showAddStudentForm('${gradeLevel}')">
+                    <i class="fas fa-plus"></i> إضافة طالب
+                </button>
+                <button type="button" class="btn-primary-school btn-small" onclick="showBulkAddStudentForm('${gradeLevel}')">
+                    <i class="fas fa-users"></i> إضافة جماعي
+                </button>
+                <button type="button" class="btn-primary-school btn-small" onclick="openMassPromotionModal()">
+                    <i class="fas fa-users-cog"></i> ترقية جماعية
                 </button>
             </div>
-            
-            <!-- Subject management container with separate add and save buttons -->
-            <div class="subject-management-container">
-                
-                <!-- Add Subject Form (Hidden by default) -->
-                <form class="form-school" id="subjectForm-${gradeLevel.replace(/\s+/g, '-')}" style="display: none;">
-                    <div class="form-row">
-                        <div class="form-group-school">
-                            <label><i class="fas fa-book"></i> اسم المادة | Subject Name</label>
-                            <input type="text" name="subjectName" required class="form-input" placeholder="أدخل اسم المادة الدراسية">
-                        </div>
-                        <div class="form-group-school">
-                            <label><i class="fas fa-layer-group"></i> المستوى الدراسي | Grade Level</label>
-                            <input type="text" name="gradeLevel" value="${gradeLevel}" readonly class="form-input" style="background-color: #f8f9fa;">
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn-primary-school btn-primary" onclick="addSubjectToGradeTemp('${gradeLevel}')">
-                            <i class="fas fa-plus"></i> إضافة إلى القائمة
-                        </button>
-                        <button type="button" class="btn-secondary-school btn-small" onclick="hideAddSubjectForm('${gradeLevel}')">
-                            <i class="fas fa-times"></i> إلغاء
-                        </button>
-                    </div>
-                </form>
-                
-                <!-- Temporary subjects list -->
-                <div id="tempSubjectsList-${gradeLevel.replace(/\s+/g, '-')}" class="temp-subjects-list" style="display: none; margin-top: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 0.75rem; border: 1px solid #e2e8f0;">
-                    <h4 style="margin: 0 0 1rem 0; color: #1e293b; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-list" style="color: #8b5cf6;"></i> المواد الجديدة | New Subjects</h4>
-                    <div class="subjects-grid temp-subjects-grid"></div>
-                    <div class="form-actions" style="margin-top: 1rem;">
-                        <button type="button" class="btn-primary-school btn-primary" onclick="saveSubjects('${gradeLevel}')">
-                            <i class="fas fa-save"></i> حفظ جميع المواد | Save All Subjects
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Subjects List Container - Vertical layout below button -->
-            <div class="subjects-list-container">
     `;
     
-    if (gradeLevelSubjects.length > 0) {
-        html += `<div class="subjects-vertical-list">`;
-        gradeLevelSubjects.forEach(subject => {
-            html += `
-                <div class="subject-card">
-                    <span class="subject-name">${subject.name}</span>
-                    <div class="subject-actions">
-                        <button class="btn-small btn-info" onclick="editSubject(${subject.id})">
-                            <i class="fas fa-edit"></i> تعديل
-                        </button>
-                        <button class="btn-small btn-danger" onclick="deleteSubject(${subject.id})">
-                            <i class="fas fa-trash"></i> حذف
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-        html += `</div>`;
-    } else {
+    if (uniqueStudents.length > 0) {
         html += `
-            <div class="empty-subjects-state">
-                <i class="fas fa-book-open"></i>
-                <p>لا توجد مواد دراسية مضافة لهذا الصف</p>
-                <small>اضغط على "إضافة مادة دراسية" لإضافة مواد جديدة</small>
-            </div>
-        `;
-    }
-    
-    html += `
-            </div>
-        </section>
-        
-        <!-- Teachers Section -->
-        <section class="section-card">
-            <h2 class="h2-school section-title"><i class="fas fa-chalkboard-teacher"></i> المعلمون - ${combinedGradeLevel || gradeLevel}</h2>
-            
-            <!-- Add Teacher Form (Hidden by default) -->
-            <form class="form-school" id="addTeacherForm-${gradeLevel.replace(/\s+/g, '-')}" style="display: none;">
-                <div class="form-row">
-                    <div class="form-group-school">
-                        <label><i class="fas fa-user-tie"></i> اسم المعلم | Teacher Name</label>
-                        <input type="text" name="teacher_name" required class="form-input" placeholder="أدخل اسم المعلم">
-                    </div>
-                    <div class="form-group-school">
-                        <label><i class="fas fa-phone"></i> رقم الهاتف | Phone</label>
-                        <input type="text" name="teacher_phone" class="form-input" placeholder="رقم هاتف المعلم">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group-school">
-                        <label><i class="fas fa-book"></i> المادة الدراسية | Subject</label>
-                        <select name="teacher_subject_id" class="form-input">
-                            <option value="">اختر المادة الدراسية</option>
-                            ${(gradeSubjects[gradeLevel] || []).slice().sort((a, b) => a.name.localeCompare(b.name, 'ar')).map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="form-group-school">
-                        <label><i class="fas fa-graduation-cap"></i> التخصص | Specialization</label>
-                        <input type="text" name="teacher_specialization" class="form-input" placeholder="تخصص المعلم">
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn-primary-school btn-primary" onclick="addTeacher('${gradeLevel}')">
-                        <i class="fas fa-save"></i> حفظ بيانات المعلم
-                    </button>
-                    <button type="button" class="btn-secondary-school btn-small" onclick="hideAddTeacherForm('${gradeLevel}')">
-                        <i class="fas fa-times"></i> إلغاء
-                    </button>
-                </div>
-            </form>
-            
-            <div class="teachers-container">
-                <button type="button" class="btn-primary-school btn-small" onclick="showAddTeacherForm('${gradeLevel}')" style="margin-bottom: 1rem;">
-                    <i class="fas fa-plus"></i> إضافة معلم | Add Teacher
-                </button>
-    `;
-    
-    // Get teachers for this grade level
-    const gradeLevelTeachers = gradeTeachers[gradeLevel] || [];
-    
-    if (gradeLevelTeachers.length > 0) {
-        html += `
-                <div class="table-responsive">
-                    <table class="table-school table-enhanced">
-                        <thead>
-                            <tr>
-                                <th class="th-school">#</th>
-                                <th class="th-school">اسم المعلم</th>
-                                <th class="th-school">المادة الدراسية</th>
-                                <th class="th-school">التخصص</th>
-                                <th class="th-school">رقم الهاتف</th>
-                                <th class="th-school">الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-        
-        gradeLevelTeachers.forEach((teacher, index) => {
-            html += `
-                            <tr data-id="${teacher.id}">
-                                <td>${index + 1}</td>
-                                <td><strong>${teacher.full_name}</strong></td>
-                                <td>${teacher.subject_name || 'غير محدد'}</td>
-                                <td>${teacher.specialization || '-'}</td>
-                                <td>${teacher.phone || '-'}</td>
-                                <td>
-                                    <button class="btn-small btn-info" onclick="editTeacher(${teacher.id})">
-                                        <i class="fas fa-edit"></i> تعديل
-                                    </button>
-                                    <button class="btn-small btn-danger" onclick="deleteTeacher(${teacher.id})">
-                                        <i class="fas fa-trash"></i> حذف
-                                    </button>
-                                </td>
-                            </tr>
-            `;
-        });
-        
-        html += `
-                        </tbody>
-                    </table>
-                </div>
-        `;
-    } else {
-        html += `
-                <div class="empty-state" style="text-align: center; padding: 2rem; color: #6c757d;">
-                    <i class="fas fa-chalkboard-teacher" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                    <p>لا يوجد معلمون مسجلون لهذا الصف</p>
-                </div>
-        `;
-    }
-    
-    html += `
-            </div>
-        </section>
-        
-        <section class="section-card">
-            <h2 class="h2-school section-title"><i class="fas fa-user-plus"></i> تسجيل طالب جديد - ${combinedGradeLevel || gradeLevel}</h2>
-            <div class="bulk-registration-toggle">
-                <button id="toggleBulkRegistration-${gradeLevel.replace(/\s+/g, '-')}" class="btn-primary-school btn-small">
-                    <i class="fas fa-users"></i> التبديل إلى التسجيل الجماعي
-                    <span class="keyboard-hint">Ctrl+Shift+B</span>
-                </button>
-            </div>
-            
-            <!-- Single Student Registration Form -->
-            <form class="form-school" id="addStudentForm-${gradeLevel.replace(/\s+/g, '-')}">
-                <input type="hidden" name="grade_level" value="${gradeLevel}">
-                <div class="form-row">
-                    <div class="form-group-school">
-                        <label><i class="fas fa-user"></i> اسم الطالب الرباعي</label>
-                        <input type="text" name="full_name" required class="form-input" placeholder="أدخل الاسم الكامل للطالب">
-                    </div>
-                    <div class="form-group-school">
-                        <label><i class="fas fa-door-open"></i> رقم القاعة</label>
-                        <input type="text" name="room" required class="form-input" placeholder="أدخل رقم القاعة">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group-school">
-                        <label><i class="fas fa-phone"></i> رقم هاتف ولي الأمر | Parent Contact</label>
-                        <input type="text" name="parent_contact" class="form-input" placeholder="رقم هاتف واحد أو رقمين مفصولين بفاصلة (مثال: 07700000000, 07800000000)">
-                    </div>
-                    <div class="form-group-school">
-                        <label><i class="fas fa-tint"></i> فصيلة الدم | Blood Type</label>
-                        <select name="blood_type" class="form-input">
-                            <option value="">اختر فصيلة الدم</option>
-                            <option value="O+">O+</option>
-                            <option value="O-">O-</option>
-                            <option value="A+">A+</option>
-                            <option value="A-">A-</option>
-                            <option value="B+">B+</option>
-                            <option value="B-">B-</option>
-                            <option value="AB+">AB+</option>
-                            <option value="AB-">AB-</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group-school">
-                        <label><i class="fas fa-heartbeat"></i> الأمراض المزمنة | Chronic Disease (اختياري)</label>
-                        <textarea class="textarea-school form-input" name="chronic_disease" rows="2" placeholder="أي حالات طبية مزمنة (اتركه فارغاً إذا لا يوجد)"></textarea>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group-school">
-                        <label><i class="fas fa-sticky-note"></i> ملاحظات</label>
-                        <textarea class="textarea-school form-input" name="notes" rows="2" placeholder="ملاحظات إضافية عن الطالب"></textarea>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary-school btn-primary">
-                        <i class="fas fa-save"></i> حفظ بيانات الطالب
-                        <span class="keyboard-hint">Ctrl+Enter</span>
-                    </button>
-                    <button type="button" id="resetFormBtn-${gradeLevel.replace(/\s+/g, '-')}" class="btn-secondary-school btn-small">
-                        <i class="fas fa-undo"></i> إعادة تعيين
-                        <span class="keyboard-hint">ESC</span>
-                    </button>
-                </div>
-            </form>
-            
-            <!-- Bulk Student Registration Form (Hidden by default) -->
-            <form class="form-school bulk-registration-form" id="bulkAddStudentForm-${gradeLevel.replace(/\s+/g, '-')}" style="display: none;">
-                <input type="hidden" name="bulk_grade_level" value="${gradeLevel}">
-                <div class="form-row">
-                    <div class="form-group-school">
-                        <label><i class="fas fa-door-open"></i> رقم القاعة</label>
-                        <input type="text" name="bulk_room" required class="form-input" placeholder="أدخل رقم القاعة">
-                    </div>
-                </div>
-                
-                <div class="bulk-students-container">
-                    <h3><i class="fas fa-list"></i> قائمة الطلاب</h3>
-                    <div id="bulkStudentsList-${gradeLevel.replace(/\s+/g, '-')}">
-                        <div class="bulk-student-row">
-                            <input type="text" name="bulk_full_name_1" placeholder="اسم الطالب الرباعي" class="form-input" required>
-                            <textarea name="bulk_notes_1" placeholder="ملاحظات" class="textarea-school form-input"></textarea>
-                            <button type="button" class="btn-danger-school btn-small remove-student-row">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <button type="button" id="addBulkStudentRow-${gradeLevel.replace(/\s+/g, '-')}" class="btn-secondary-school btn-small">
-                        <i class="fas fa-plus"></i> إضافة طالب آخر
-                    </button>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary-school btn-primary">
-                        <i class="fas fa-save"></i> حفظ جميع الطلاب
-                        <span class="keyboard-hint">Ctrl+Enter</span>
-                    </button>
-                    <button type="button" id="resetBulkFormBtn-${gradeLevel.replace(/\s+/g, '-')}" class="btn-secondary-school btn-small">
-                        <i class="fas fa-undo"></i> إعادة تعيين
-                        <span class="keyboard-hint">ESC</span>
-                    </button>
-                    <button type="button" id="cancelBulkRegistration-${gradeLevel.replace(/\s+/g, '-')}" class="btn-secondary-school btn-small">
-                        <i class="fas fa-times"></i> إلغاء التسجيل الجماعي
-                    </button>
-                </div>
-            </form>
-        </section>
-        
-        <section class="section-card">
-            <h2 class="h2-school section-title"><i class="fas fa-users"></i> قائمة الطلاب - ${combinedGradeLevel || gradeLevel}</h2>
-            <div class="form-row">
-                <div class="form-group-school">
-                    <label>بحث عن طالب</label>
-                    <input type="text" id="studentSearch-${gradeLevel.replace(/\s+/g, '-')}" placeholder="ابحث باسم الطالب أو الرمز" class="form-input" oninput="searchStudents('${gradeLevel}')">
-                </div>
-            </div>
-            <div class="form-row" style="gap: 0.5rem;">
-                <button onclick="refreshStudentsList('${gradeLevel}')" class="btn-primary-school btn-primary" style="margin-bottom: 1rem;">
-                    <i class="fas fa-refresh"></i> تحديث القائمة
-                </button>
-                <button onclick="openMassPromotionModal()" class="btn-primary-school btn-warning" style="margin-bottom: 1rem;">
-                    <i class="fas fa-users"></i> ترقية جماعية
-                </button>
-            </div>
             <div class="table-responsive">
                 <table class="table-school table-enhanced">
                     <thead>
                         <tr>
                             <th class="th-school">#</th>
-                            <th class="th-school">الاسم</th>
+                            <th class="th-school">اسم الطالب</th>
                             <th class="th-school">القاعة</th>
                             <th class="th-school">رمز الطالب</th>
-                            <th class="th-school">الأداء</th>
                             <th class="th-school">الإجراءات</th>
                         </tr>
                     </thead>
-                    <tbody id="studentsTableBody-${gradeLevel.replace(/\s+/g, '-')}">
-    `;
-    
-    // Add students table rows with sequential numbering (already sorted)
-    if (uniqueStudents.length > 0) {
+                    <tbody>
+        `;
+        
         uniqueStudents.forEach((student, index) => {
-            // Get performance prediction if AI model is available
-            let performanceLevel = 'غير محدد';
-            let performanceClass = '';
-            
-            if (aiModel) {
-                const prediction = aiModel.predictPerformance(student);
-                performanceLevel = 
-                    prediction.level === 'excellent' ? 'ممتاز' :
-                    prediction.level === 'good' ? 'جيد' :
-                    prediction.level === 'average' ? 'متوسط' : 'يحتاج تحسناً';
-                performanceClass = 
-                    prediction.level === 'excellent' ? 'excellent' :
-                    prediction.level === 'good' ? 'good' :
-                    prediction.level === 'average' ? 'average' : 'needs-improvement';
-            }
-            
             html += `
                 <tr data-id="${student.id}">
                     <td>${index + 1}</td>
                     <td><strong>${student.full_name}</strong></td>
                     <td>${student.room}</td>
-                    <td><code class="code-btn" onclick="copyToClipboard('${student.student_code}')">${student.student_code}</code></td>
-                    <td><span class="performance-badge ${performanceClass}">${performanceLevel}</span></td>
+                    <td><code class="code-btn" onclick="copyToClipboard('${student.student_code}')">${student.student_code || '-'}</code></td>
                     <td>
-                        <button class="btn-small btn-secondary" onclick="openStudentInfoModal(${student.id})" title="عرض المعلومات"><i class="fas fa-eye"></i> المعلومات</button>
-                        <button class="btn-small btn-info" onclick="openGradesModal(${student.id})"><i class="fas fa-chart-line"></i> الدرجات</button>
-                        <button class="btn-small btn-success" onclick="openAttendanceModal(${student.id})"><i class="fas fa-calendar-check"></i> الحضور</button>
-                        <button class="btn-small btn-warning" onclick="openPromotionModal(${student.id})" title="ترقية الطالب"><i class="fas fa-arrow-up"></i> ترقية</button>
-                        <button class="btn-small btn-primary" onclick="openStudentHistoryModal(${student.id})" title="عرض السجل الأكاديمي"><i class="fas fa-history"></i> السجل</button>
-                        <button class="btn-small btn-info" onclick="editStudent(${student.id})"><i class="fas fa-edit"></i> تعديل</button>
-                        <button class="btn-small btn-danger" onclick="deleteStudent(${student.id})"><i class="fas fa-trash"></i> حذف</button>
+                        <button class="btn-small btn-info" onclick="viewStudentInfo(${student.id})" title="معلومات الطالب">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                        <button class="btn-small btn-primary" onclick="openGradesModal(${student.id})" title="إضافة درجات">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="btn-small btn-success" onclick="viewStudentAttendance(${student.id})" title="الحضور">
+                            <i class="fas fa-calendar-check"></i>
+                        </button>
+                        <button class="btn-small btn-warning" onclick="openPromotionModal(${student.id})" title="ترقية الطالب">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button class="btn-small btn-secondary" onclick="editStudent(${student.id})" title="تعديل">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-small btn-danger" onclick="deleteStudent(${student.id})" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </td>
                 </tr>
             `;
         });
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
     } else {
-        html += `<tr><td colspan="6" style="text-align: center; padding: 2rem;">لا يوجد طلاب مسجلين في هذا الصف</td></tr>`;
+        html += `
+            <div class="empty-state" style="text-align: center; padding: 3rem; color: var(--gray-500);">
+                <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <p>لا يوجد طلاب مسجلين في هذا الصف</p>
+                <small>اضغط على "إضافة طالب" لإضافة طلاب جدد</small>
+            </div>
+        `;
     }
     
     html += `
-                </tbody>
-            </table>
         </section>
     `;
     
     document.getElementById('gradeLevelContent').innerHTML = html;
     
-    // Show the open subjects modal button since a grade level is now selected
-    const openSubjectsModalBtn = document.getElementById('openSubjectsModalBtn');
-    if (openSubjectsModalBtn) {
-        openSubjectsModalBtn.style.display = 'inline-block';
-    }
-    
-    // Re-setup event listeners for the new elements
-    setupEventListeners();
-    setupBulkRegistration();
+    // Make functions available globally
+    window.showAddStudentForm = showAddStudentForm;
+    window.showBulkAddStudentForm = showBulkAddStudentForm;
+    window.viewStudentInfo = viewStudentInfo;
+    window.viewStudentGrades = viewStudentGrades;
+    window.viewStudentAttendance = viewStudentAttendance;
+    window.editStudent = editStudent;
+    window.deleteStudent = deleteStudent;
 }
 
 // Make sure the function is available globally
@@ -1676,10 +1576,11 @@ async function fetchSubjects() {
                 // Group subjects by grade level and sort alphabetically
                 gradeSubjects = {};
                 subjects.forEach(subject => {
-                    if (!gradeSubjects[subject.grade_level]) {
-                        gradeSubjects[subject.grade_level] = [];
+                    const gl = subject.grade_level || 'عامة';
+                    if (!gradeSubjects[gl]) {
+                        gradeSubjects[gl] = [];
                     }
-                    gradeSubjects[subject.grade_level].push(subject);
+                    gradeSubjects[gl].push(subject);
                 });
                 
                 // Sort subjects alphabetically within each grade level (like teachers)
@@ -1688,6 +1589,9 @@ async function fetchSubjects() {
                         a.name.localeCompare(b.name, 'ar')
                     );
                 }
+                
+                // Refresh subject management table if modal is open
+                if (typeof refreshSubjectsTable === 'function') refreshSubjectsTable();
                 
                 // If a grade level is already selected, refresh its content
                 if (selectedGradeLevel) {
@@ -1700,13 +1604,6 @@ async function fetchSubjects() {
         }
     } catch (error) {
         console.error('Error fetching subjects:', error);
-        // Fallback to localStorage if server fetch fails
-        const savedSubjects = localStorage.getItem('subjects');
-        if (savedSubjects) {
-            subjects = JSON.parse(savedSubjects);
-        } else {
-            subjects = ['اللغة العربية', 'الرياضيات', 'العلوم', 'الانجليزية'];
-        }
     }
 }
 
@@ -1831,6 +1728,18 @@ async function fetchTeachers() {
             const result = await response.json();
             if (result && result.teachers && Array.isArray(result.teachers)) {
                 teachers = result.teachers;
+                console.log('Loaded teachers data:', teachers); // Debug log
+                
+                // Add additional debugging for subject data
+                teachers.forEach((teacher, index) => {
+                    console.log(`Teacher ${index + 1}: ${teacher.full_name}`, {
+                        subjects: teacher.subjects,
+                        subject_names: teacher.subject_names,
+                        subjects_type: Array.isArray(teacher.subjects) ? 'array' : typeof teacher.subjects,
+                        subjects_length: Array.isArray(teacher.subjects) ? teacher.subjects.length : 'N/A'
+                    });
+                });
+                
                 // Group teachers by grade level
                 gradeTeachers = {};
                 teachers.forEach(teacher => {
@@ -1854,52 +1763,13 @@ async function fetchTeachers() {
     }
 }
 
-// Add a new teacher
-async function addTeacher(gradeLevel) {
-    const gradeLevelId = gradeLevel.replace(/\s+/g, '-');
-    const form = document.getElementById(`addTeacherForm-${gradeLevelId}`);
-    if (!form) return;
-    
-    const formData = new FormData(form);
-    const full_name = formData.get('teacher_name');
-    const phone = formData.get('teacher_phone');
-    const subject_id = formData.get('teacher_subject_id') || null;
-    const specialization = formData.get('teacher_specialization');
-    
-    if (!full_name) {
-        showNotification('يرجى إدخال اسم المعلم', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/api/school/${currentSchool.id}/teacher`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({
-                full_name: full_name,
-                phone: phone,
-                subject_id: subject_id ? parseInt(subject_id) : null,
-                grade_level: gradeLevel,
-                specialization: specialization
-            })
-        });
-        
-        if (response.ok) {
-            showNotification('تم إضافة المعلم بنجاح', 'success');
-            form.reset();
-            hideAddTeacherForm(gradeLevel);
-            await fetchTeachers();
-        } else {
-            const error = await response.json();
-            showNotification(error.error_ar || error.error || 'حدث خطأ في إضافة المعلم', 'error');
-        }
-    } catch (error) {
-        console.error('Error adding teacher:', error);
-        showNotification('حدث خطأ في الاتصال بالخادم', 'error');
-    }
+// Teacher management is now centralized at school level - see openTeacherAssignmentModal()
+// Grade-level specific addTeacher function is deprecated
+function addTeacher(gradeLevel) {
+    showNotification('يرجى إدارة المعلمين من لوحة تحكم المدرسة', 'info');
 }
 
-// Edit a teacher
+// Edit a teacher (opens centralized modal)
 async function editTeacher(teacherId) {
     const teacher = teachers.find(t => t.id === teacherId);
     if (!teacher) return;
@@ -1959,23 +1829,14 @@ async function deleteTeacher(teacherId) {
     }
 }
 
-// Show add teacher form
+// Show add teacher form - now shows info notification
 function showAddTeacherForm(gradeLevel) {
-    const gradeLevelId = gradeLevel.replace(/\s+/g, '-');
-    const form = document.getElementById(`addTeacherForm-${gradeLevelId}`);
-    if (form) {
-        form.style.display = 'block';
-    }
+    showNotification('يرجى إدارة المعلمين من لوحة تحكم المدرسة - تبويب إدارة التوزيعات', 'info');
 }
 
-// Hide add teacher form
+// Hide add teacher form - no longer needed
 function hideAddTeacherForm(gradeLevel) {
-    const gradeLevelId = gradeLevel.replace(/\s+/g, '-');
-    const form = document.getElementById(`addTeacherForm-${gradeLevelId}`);
-    if (form) {
-        form.style.display = 'none';
-        form.reset();
-    }
+    // Form is no longer shown at grade level
 }
 
 // Make teacher functions available globally
@@ -1984,6 +1845,751 @@ window.editTeacher = editTeacher;
 window.deleteTeacher = deleteTeacher;
 window.showAddTeacherForm = showAddTeacherForm;
 window.hideAddTeacherForm = hideAddTeacherForm;
+
+// ============================================================================
+// NEW TEACHER MANAGEMENT FUNCTIONS
+// ============================================================================
+
+// Generate new teacher code by calling the backend regeneration endpoint
+async function generateNewTeacherCode() {
+    // Get the current teacher ID from the form context
+    // This function is called from the add teacher modal where we're creating a new teacher
+    // For new teachers, we'll generate a preview code, for existing teachers, we'll regenerate
+    
+    const teacherNameInput = document.getElementById('teacherName');
+    const teacherName = teacherNameInput?.value.trim();
+    
+    if (!teacherName) {
+        showNotification('يرجى إدخال اسم المعلم أولاً', 'error');
+        teacherNameInput?.focus();
+        return;
+    }
+    
+    try {
+        // For the add teacher form, we'll generate a preview code locally
+        // In a real implementation, this would call the backend to reserve the code
+        const previewCode = generatePreviewTeacherCode();
+        
+        // Update the code preview display
+        const codePreview = document.getElementById('teacherCodePreview');
+        if (codePreview) {
+            codePreview.textContent = previewCode;
+            codePreview.title = 'هذا الرمز سيتم تأكيده عند الحفظ';
+            
+            // Add visual feedback
+            codePreview.style.backgroundColor = '#e3f2fd';
+            codePreview.style.borderColor = '#2196f3';
+            setTimeout(() => {
+                codePreview.style.backgroundColor = 'white';
+                codePreview.style.borderColor = '';
+            }, 1000);
+        }
+        
+        showNotification('تم إنشاء رمز معاينة جديد! سيتم تأكيده عند حفظ المعلم', 'success');
+        
+    } catch (error) {
+        console.error('Error generating preview code:', error);
+        showNotification('حدث خطأ في إنشاء الرمز المعاينة', 'error');
+    }
+}
+
+// Generate a preview code for the add teacher form (simulated)
+function generatePreviewTeacherCode() {
+    // This simulates what the backend would generate
+    // In a production system, this would call: fetch('/api/teacher/generate-preview-code')
+    const timestamp = String(Date.now()).slice(-5);
+    const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `TCHR-${timestamp}-${randomStr}`;
+}
+
+// Make the function available globally
+window.generateNewTeacherCode = generateNewTeacherCode;
+
+// Show Add Teacher Modal with enhanced features
+function showAddTeacherModal() {
+    // Reset form
+    document.getElementById('addTeacherForm').reset();
+    document.getElementById('teacherName').focus();
+    
+    // Show default code preview
+    const codePreview = document.getElementById('teacherCodePreview');
+    if (codePreview) {
+        codePreview.textContent = 'TCHR-XXXXX-XXXX';
+        codePreview.title = 'سيتم إنشاء الرمز تلقائياً عند الحفظ';
+    }
+    
+    // Populate grade level options
+    populateTeacherGradeLevelOptions();
+    
+    // Load all subjects for school instead of just grade-specific
+    loadSubjectCheckboxes();
+    
+    // Open modal
+    document.getElementById('addTeacherModal').style.display = 'flex';
+}
+
+function populateTeacherGradeLevelOptions() {
+    const teacherGradeLevelSelect = document.getElementById('teacherGradeLevel');
+    if (!teacherGradeLevelSelect) return;
+    
+    teacherGradeLevelSelect.innerHTML = '<option value="">غير محدد</option>';
+    
+    gradeLevels.forEach(grade => {
+        const option = document.createElement('option');
+        option.value = grade;
+        option.textContent = grade;
+        if (selectedGradeLevel) {
+            const parts = selectedGradeLevel.split(' - ');
+            const originalGradeLevel = parts.length > 1 ? parts[1] : selectedGradeLevel;
+            if (grade === originalGradeLevel) {
+                option.selected = true;
+            }
+        }
+        teacherGradeLevelSelect.appendChild(option);
+    });
+}
+
+async function loadSubjectCheckboxes(gradeFilter = null) {
+    const container = document.getElementById('subjectCheckboxes');
+    if (!container) return;
+    
+    container.innerHTML = '<p>جارٍ تحميل المواد...</p>';
+    
+    try {
+        if (subjects.length === 0) {
+            await fetchSubjects();
+        }
+        
+        let filteredSubjects = subjects;
+        if (gradeFilter) {
+            filteredSubjects = subjects.filter(s => s.grade_level === gradeFilter);
+        }
+        
+        if (filteredSubjects.length === 0) {
+            container.innerHTML = '<p>لا توجد مواد مضافة حالياً.</p>';
+            return;
+        }
+        
+        // Group subjects by grade level
+        const grouped = {};
+        filteredSubjects.forEach(s => {
+            const grade = s.grade_level || 'مواد عامة';
+            if (!grouped[grade]) grouped[grade] = [];
+            grouped[grade].push(s);
+        });
+        
+        let html = '';
+        for (const grade in grouped) {
+            html += `<div class="subject-group" style="margin-bottom: 0.5rem;">
+                <h5 style="margin: 0.5rem 0; border-bottom: 1px solid #eee;">${grade}</h5>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem;">
+            `;
+            grouped[grade].forEach(s => {
+                html += `
+                    <label class="checkbox-item" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                        <input type="checkbox" name="subject_ids" value="${s.id}">
+                        ${s.name}
+                    </label>
+                `;
+            });
+            html += `</div></div>`;
+        }
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Error loading subject checkboxes:', error);
+        container.innerHTML = '<p>حدث خطأ في تحميل المواد.</p>';
+    }
+}
+
+// Load subject checkboxes for teacher form
+async function loadSubjectCheckboxes(gradeLevel) {
+    const container = document.getElementById('subjectCheckboxes');
+    
+    try {
+        // Get subjects for this grade level
+        const gradeLevelSubjects = (gradeSubjects[gradeLevel] || []).slice().sort((a, b) => 
+            a.name.localeCompare(b.name, 'ar')
+        );
+        
+        if (gradeLevelSubjects.length === 0) {
+            container.innerHTML = '<p>لا توجد مواد متوفرة لهذا الصف. يرجى إضافة مواد أولاً.</p>';
+            return;
+        }
+        
+        // Generate checkboxes
+        let html = '';
+        gradeLevelSubjects.forEach(subject => {
+            html += `
+                <div style="margin-bottom: 0.5rem;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" name="subject_ids" value="${subject.id}" style="margin-right: 0.5rem;">
+                        ${subject.name}
+                    </label>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error loading subject checkboxes:', error);
+        container.innerHTML = '<p>حدث خطأ في تحميل المواد</p>';
+    }
+}
+
+// Handle Add Teacher Form Submission with enhanced error handling
+document.getElementById('addTeacherForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    console.log('Add teacher form submitted');
+    
+    if (!currentSchool || !currentSchool.id) {
+        console.error('Current school not available:', currentSchool);
+        showNotification('خطأ في تحميل معلومات المدرسة', 'error');
+        return;
+    }
+    
+    // Get grade level from dropdown or selected grade
+    let teacherGradeLevel = '';
+    const gradeLevelSelect = document.getElementById('teacherGradeLevel');
+    if (gradeLevelSelect && gradeLevelSelect.value) {
+        teacherGradeLevel = gradeLevelSelect.value;
+    } else if (selectedGradeLevel) {
+        const parts = selectedGradeLevel.split(' - ');
+        teacherGradeLevel = parts.length > 1 ? parts[1] : selectedGradeLevel;
+    }
+    
+    // Get form data
+    const fullName = document.getElementById('teacherName').value.trim();
+    const phone = document.getElementById('teacherPhone').value.trim();
+    const email = document.getElementById('teacherEmail').value.trim();
+    const specialization = document.getElementById('teacherSpecialization').value.trim();
+    
+    // Get selected subjects
+    const selectedSubjectCheckboxes = document.querySelectorAll('input[name="subject_ids"]:checked');
+    const subjectIds = Array.from(selectedSubjectCheckboxes).map(cb => parseInt(cb.value));
+    
+    console.log('Form data:', { fullName, phone, email, specialization, subjectIds, gradeLevel: teacherGradeLevel });
+    
+    // Validation
+    if (!fullName) {
+        showNotification('يرجى إدخال اسم المعلم', 'error');
+        document.getElementById('teacherName').focus();
+        return;
+    }
+    
+    // Add loading state to submit button
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.innerHTML;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+    submitButton.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/school/${currentSchool.id}/teacher`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                full_name: fullName,
+                phone: phone,
+                email: email,
+                subject_ids: subjectIds,
+                grade_level: teacherGradeLevel,
+                specialization: specialization
+            })
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response headers:', [...response.headers.entries()]);
+        
+        const result = await response.json();
+        console.log('Response data:', result);
+        
+        if (response.ok && result.success) {
+            // Handle both possible response structures
+            const teacherCode = result.teacher_code || (result.teacher && result.teacher.teacher_code) || 'رمز غير متوفر';
+            showNotification(`تم إضافة المعلم بنجاح! الرمز: ${teacherCode}`, 'success');
+            closeModal('addTeacherModal');
+            document.getElementById('addTeacherForm').reset();
+            await fetchTeachers();
+            
+            // Reload grade content to show updated teacher list
+            loadGradeSubjectsForLevel(selectedGradeLevel, originalGradeLevel);
+        } else {
+            const errorMessage = result.error_ar || result.error || 'حدث خطأ في إضافة المعلم';
+            showNotification(errorMessage, 'error');
+            console.error('Server error:', result);
+        }
+    } catch (error) {
+        console.error('Error adding teacher:', error);
+        console.error('Error stack:', error.stack);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        
+        // More detailed error message
+        let errorMessage = 'حدث خطأ غير متوقع';
+        if (error.message) {
+            errorMessage += `: ${error.message}`;
+        }
+        
+        showNotification(errorMessage, 'error');
+        
+        // Log to a visible debug area if it exists
+        const debugArea = document.getElementById('debugErrorLog');
+        if (debugArea) {
+            debugArea.innerHTML += `<div style="color: red; margin: 5px 0;">[${new Date().toLocaleTimeString()}] ${error.message || error}</div>`;
+            debugArea.scrollTop = debugArea.scrollHeight;
+        }
+    } finally {
+        // Restore button state
+        submitButton.innerHTML = originalButtonText;
+        submitButton.disabled = false;
+    }
+});
+
+// Show Teachers List Modal with enhanced features
+function showTeachersList() {
+    if (!selectedGradeLevel) {
+        showNotification('يرجى اختيار صف أولاً', 'error');
+        return;
+    }
+    
+    const parts = selectedGradeLevel.split(' - ');
+    const originalGradeLevel = parts.length > 1 ? parts[1] : selectedGradeLevel;
+    
+    // Set grade level title
+    document.getElementById('teachersGradeLevel').textContent = selectedGradeLevel;
+    
+    // Load teachers for this grade level
+    loadTeachersTable(originalGradeLevel);
+    
+    // Set up search and filter event listeners
+    setupTeacherSearchAndFilter(originalGradeLevel);
+    
+    // Load subject filter options
+    loadSubjectFilterOptions();
+    
+    // Open modal
+    document.getElementById('teachersListModal').style.display = 'flex';
+}
+
+// Set up search and filter functionality
+function setupTeacherSearchAndFilter(gradeLevel) {
+    const searchInput = document.getElementById('teacherSearch');
+    const subjectFilter = document.getElementById('teacherFilterSubject');
+    
+    // Clear previous event listeners by cloning elements
+    if (searchInput) {
+        const newSearchInput = searchInput.cloneNode(true);
+        searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+        newSearchInput.addEventListener('input', debounce(() => {
+            filterTeachers(gradeLevel);
+        }, 300));
+    }
+    
+    if (subjectFilter) {
+        const newSubjectFilter = subjectFilter.cloneNode(true);
+        subjectFilter.parentNode.replaceChild(newSubjectFilter, subjectFilter);
+        newSubjectFilter.addEventListener('change', () => {
+            filterTeachers(gradeLevel);
+        });
+    }
+}
+
+// Load subject filter options
+function loadSubjectFilterOptions() {
+    const subjectFilter = document.getElementById('teacherFilterSubject');
+    if (!subjectFilter) return;
+    
+    // Get all unique subjects from current teachers
+    // Handle teachers with and without subjects (subjects are now optional)
+    const allSubjects = new Set();
+    teachers.forEach(teacher => {
+        // Check multiple subject data formats
+        if (teacher.subjects && Array.isArray(teacher.subjects) && teacher.subjects.length > 0) {
+            // Handle array of subject objects
+            teacher.subjects.forEach(subject => {
+                if (subject && subject.name) {
+                    allSubjects.add(subject.name);
+                }
+            });
+        } else if (teacher.subject_names && typeof teacher.subject_names === 'string') {
+            // Handle comma-separated string
+            teacher.subject_names.split(',').forEach(subject => {
+                const subjectName = subject.trim();
+                if (subjectName) {
+                    allSubjects.add(subjectName);
+                }
+            });
+        } else if (teacher.subject_ids && Array.isArray(teacher.subject_ids)) {
+            // Handle subject IDs - this would require looking up subject names elsewhere
+            // For now, we'll skip this case as we don't have the subject lookup mechanism here
+        }
+    });
+    
+    // Clear and populate options
+    subjectFilter.innerHTML = '<option value="">جميع المواد</option>';
+    Array.from(allSubjects).sort().forEach(subject => {
+        const option = document.createElement('option');
+        option.value = subject;
+        option.textContent = subject;
+        subjectFilter.appendChild(option);
+    });
+}
+
+// Filter teachers based on search and subject filter
+function filterTeachers(gradeLevel) {
+    const searchInput = document.getElementById('teacherSearch');
+    const subjectFilter = document.getElementById('teacherFilterSubject');
+    const tbody = document.getElementById('teachersTableBody');
+    const summary = document.getElementById('teachersSummary');
+    
+    if (!searchInput || !subjectFilter || !tbody) return;
+    
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    const selectedSubject = subjectFilter.value;
+    
+    // Filter teachers
+    let filteredTeachers = teachers.filter(teacher => teacher.grade_level === gradeLevel);
+    
+    // Apply search filter
+    if (searchTerm) {
+        filteredTeachers = filteredTeachers.filter(teacher => 
+            teacher.full_name.toLowerCase().includes(searchTerm) ||
+            teacher.teacher_code.toLowerCase().includes(searchTerm) ||
+            (teacher.email && teacher.email.toLowerCase().includes(searchTerm))
+        );
+    }
+    
+    // Apply subject filter
+    if (selectedSubject) {
+        filteredTeachers = filteredTeachers.filter(teacher => 
+            teacher.subjects && teacher.subjects.some(subject => subject.name === selectedSubject)
+        );
+    }
+    
+    // Update summary
+    if (summary) {
+        const total = teachers.filter(t => t.grade_level === gradeLevel).length;
+        summary.textContent = `المعروض: ${filteredTeachers.length} من ${total} معلم`;
+    }
+    
+    // Generate table rows
+    if (filteredTeachers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;">لا توجد نتائج مطابقة</td></tr>`;
+        return;
+    }
+    
+    let html = '';
+    filteredTeachers.forEach(teacher => {
+        const subjectNames = teacher.subjects && teacher.subjects.length > 0 
+            ? teacher.subjects.map(s => s.name).join(', ')
+            : 'لم تحدد مواد';
+        
+        html += `
+            <tr>
+                <td class="td-school">${teacher.full_name}</td>
+                <td class="td-school">${subjectNames}</td>
+                <td class="td-school">${teacher.grade_level}</td>
+                <td class="td-school">${teacher.email || '-'}</td>
+                <td class="td-school">${teacher.phone || '-'}</td>
+                <td class="td-school">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <code class="code-btn" style="cursor: pointer; font-size: 0.9rem; padding: 0.2rem 0.5rem;" 
+                              onclick="copyTeacherCode('${teacher.teacher_code}', this)"
+                              data-teacher-id="${teacher.id}">
+                            ${teacher.teacher_code}
+                        </code>
+                        <button class="btn-small btn-info" onclick="copyTeacherCode('${teacher.teacher_code}')" 
+                                title="نسخ الرمز" style="padding: 0.2rem 0.4rem;">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </td>
+                <td class="td-school">
+                    <button class="btn-small btn-info" onclick="editTeacherModal(${teacher.id})" style="margin: 0.1rem;">
+                        <i class="fas fa-edit"></i> تعديل
+                    </button>
+                    <button class="btn-small btn-warning" onclick="regenerateTeacherCode(${teacher.id})" style="margin: 0.1rem;">
+                        <i class="fas fa-sync"></i> تجديد الرمز
+                    </button>
+                    <button class="btn-small btn-danger" onclick="deleteTeacher(${teacher.id})" style="margin: 0.1rem;">
+                        <i class="fas fa-trash"></i> حذف
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+// Debounce function for search input
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Load teachers table with enhanced features
+function loadTeachersTable(gradeLevel) {
+    const tbody = document.getElementById('teachersTableBody');
+    const summary = document.getElementById('teachersSummary');
+    
+    // Filter teachers for this grade level
+    const gradeLevelTeachers = teachers.filter(teacher => teacher.grade_level === gradeLevel);
+    
+    // Update summary
+    if (summary) {
+        summary.textContent = `إجمالي المعلمين: ${gradeLevelTeachers.length}`;
+    }
+    
+    if (gradeLevelTeachers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;">لا يوجد معلمون مسجلون في هذا الصف</td></tr>`;
+        return;
+    }
+    
+    // Generate table rows
+    let html = '';
+    gradeLevelTeachers.forEach(teacher => {
+        // Get subject names - improved logic to handle different data structures
+        let subjectNames = 'لم تحدد مواد';
+        if (teacher.subjects && Array.isArray(teacher.subjects) && teacher.subjects.length > 0) {
+            // Handle case where subjects is an array of objects with name property
+            try {
+                subjectNames = teacher.subjects
+                    .filter(s => s && s.name) // Filter out invalid subjects
+                    .map(s => s.name)
+                    .join(', ');
+                if (!subjectNames) {
+                    subjectNames = 'لم تحدد مواد';
+                }
+            } catch (e) {
+                console.error('Error processing teacher subjects:', e);
+                subjectNames = 'خطأ في تحميل المواد';
+            }
+        } else if (teacher.subject_names && typeof teacher.subject_names === 'string' && teacher.subject_names.trim()) {
+            // Fallback to subject_names string if available
+            subjectNames = teacher.subject_names;
+        }
+        
+        html += `
+            <tr>
+                <td class="td-school">${teacher.full_name}</td>
+                <td class="td-school">${subjectNames}</td>
+                <td class="td-school">${teacher.grade_level}</td>
+                <td class="td-school">${teacher.email || '-'}</td>
+                <td class="td-school">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <code class="code-btn" style="cursor: pointer; font-size: 0.9rem; padding: 0.2rem 0.5rem;" 
+                              onclick="copyTeacherCode('${teacher.teacher_code}', this)"
+                              data-teacher-id="${teacher.id}">
+                            ${teacher.teacher_code}
+                        </code>
+                        <button class="btn-small btn-info" onclick="copyTeacherCode('${teacher.teacher_code}')" 
+                                title="نسخ الرمز" style="padding: 0.2rem 0.4rem;">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </td>
+                <td class="td-school">${teacher.phone || '-'}</td>
+                <td class="td-school">
+                    <button class="btn-small btn-info" onclick="editTeacherModal(${teacher.id})" style="margin: 0.1rem;">
+                        <i class="fas fa-edit"></i> تعديل
+                    </button>
+                    <button class="btn-small btn-warning" onclick="regenerateTeacherCode(${teacher.id})" style="margin: 0.1rem;">
+                        <i class="fas fa-sync"></i> تجديد الرمز
+                    </button>
+                    <button class="btn-small btn-danger" onclick="deleteTeacher(${teacher.id})" style="margin: 0.1rem;">
+                        <i class="fas fa-trash"></i> حذف
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+// Copy teacher code with visual feedback
+function copyTeacherCode(code, element = null) {
+    navigator.clipboard.writeText(code).then(() => {
+        showNotification('تم نسخ رمز المعلم إلى الحافظة', 'success');
+        
+        // Visual feedback on the code element
+        if (element) {
+            const originalBg = element.style.backgroundColor;
+            element.style.backgroundColor = '#4CAF50';
+            element.style.color = 'white';
+            setTimeout(() => {
+                element.style.backgroundColor = originalBg;
+                element.style.color = '';
+            }, 1000);
+        }
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        showNotification('فشل في النسخ، يرجى المحاولة مرة أخرى', 'error');
+    });
+}
+
+// Regenerate teacher code
+async function regenerateTeacherCode(teacherId) {
+    if (!confirm('هل أنت متأكد من تجديد رمز المعلم؟ سيتم إنشاء رمز جديد واستبدال الرمز الحالي.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/teacher/${teacherId}/regenerate-code`, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            showNotification(`تم تجديد رمز المعلم بنجاح! الرمز الجديد: ${result.new_code}`, 'success');
+            
+            // Update the teacher in local array
+            const teacherIndex = teachers.findIndex(t => t.id === teacherId);
+            if (teacherIndex !== -1) {
+                teachers[teacherIndex] = result.teacher;
+            }
+            
+            // Reload the table to show updated code
+            const parts = selectedGradeLevel.split(' - ');
+            const originalGradeLevel = parts.length > 1 ? parts[1] : selectedGradeLevel;
+            loadTeachersTable(originalGradeLevel);
+            
+            // Also update any displayed code elements
+            updateDisplayedTeacherCodes(teacherId, result.new_code);
+        } else {
+            showNotification(result.error_ar || result.error || 'حدث خطأ في تجديد الرمز', 'error');
+        }
+    } catch (error) {
+        console.error('Error regenerating teacher code:', error);
+        showNotification('حدث خطأ في الاتصال بالخادم', 'error');
+    }
+}
+
+// Update displayed teacher codes in the UI
+function updateDisplayedTeacherCodes(teacherId, newCode) {
+    // Update code in teacher list table
+    const codeElements = document.querySelectorAll(`code[data-teacher-id="${teacherId}"]`);
+    codeElements.forEach(element => {
+        element.textContent = newCode;
+    });
+    
+    // Update any other code displays
+    const teacherCodeDisplays = document.querySelectorAll('.teacher-code-display');
+    teacherCodeDisplays.forEach(element => {
+        if (element.dataset.teacherId == teacherId) {
+            element.textContent = newCode;
+        }
+    });
+}
+
+// Make functions available globally
+window.regenerateTeacherCode = regenerateTeacherCode;
+
+// Edit Teacher Modal
+async function editTeacherModal(teacherId) {
+    const teacher = teachers.find(t => t.id === teacherId);
+    if (!teacher) return;
+    
+    // Show add teacher modal in edit mode
+    showAddTeacherModal();
+    
+    // Fill form with existing data
+    document.getElementById('teacherName').value = teacher.full_name;
+    document.getElementById('teacherPhone').value = teacher.phone || '';
+    document.getElementById('teacherEmail').value = teacher.email || '';
+    document.getElementById('teacherSpecialization').value = teacher.specialization || '';
+    
+    // Check the teacher's subjects
+    setTimeout(() => {
+        const subjectCheckboxes = document.querySelectorAll('input[name="subject_ids"]');
+        subjectCheckboxes.forEach(checkbox => {
+            if (teacher.subject_ids && teacher.subject_ids.includes(checkbox.value)) {
+                checkbox.checked = true;
+            }
+        });
+    }, 100);
+    
+    // Change form submit handler for editing
+    const form = document.getElementById('addTeacherForm');
+    const originalSubmitHandler = form.onsubmit;
+    
+    form.onsubmit = async function(e) {
+        e.preventDefault();
+        
+        // Get form data
+        const fullName = document.getElementById('teacherName').value.trim();
+        const phone = document.getElementById('teacherPhone').value.trim();
+        const email = document.getElementById('teacherEmail').value.trim();
+        const specialization = document.getElementById('teacherSpecialization').value.trim();
+        
+        // Get selected subjects
+        const selectedSubjectCheckboxes = document.querySelectorAll('input[name="subject_ids"]:checked');
+        const subjectIds = Array.from(selectedSubjectCheckboxes).map(cb => parseInt(cb.value));
+        
+        // Validation
+        if (!fullName) {
+            showNotification('يرجى إدخال اسم المعلم', 'error');
+            return;
+        }
+        
+        if (subjectIds.length === 0) {
+            showNotification('يرجى اختيار مادة واحدة على الأقل', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/teacher/${teacherId}`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    full_name: fullName,
+                    phone: phone,
+                    email: email,
+                    subject_ids: subjectIds,
+                    grade_level: teacher.grade_level,
+                    specialization: specialization
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                showNotification('تم تحديث بيانات المعلم بنجاح', 'success');
+                closeModal('addTeacherModal');
+                document.getElementById('addTeacherForm').reset();
+                await fetchTeachers();
+                
+                // Reload grade content
+                const parts = selectedGradeLevel.split(' - ');
+                const originalGradeLevel = parts.length > 1 ? parts[1] : selectedGradeLevel;
+                loadGradeSubjectsForLevel(selectedGradeLevel, originalGradeLevel);
+                
+                // Restore original submit handler
+                form.onsubmit = originalSubmitHandler;
+            } else {
+                showNotification(result.error_ar || result.error || 'حدث خطأ في تحديث المعلم', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating teacher:', error);
+            showNotification('حدث خطأ في الاتصال بالخادم', 'error');
+        }
+    };
+}
+
+// Add teacher management functions to window object
+window.showAddTeacherModal = showAddTeacherModal;
+window.showTeachersList = showTeachersList;
 
 // إدارة المستويات الدراسية
 
@@ -2021,19 +2627,103 @@ function calculateBranchSuccessRate(studentsInBranch) {
 }
 
 // إدارة المواد
+function showSubjectManagementModal() {
+    const modal = document.getElementById('subjectManagementModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        populateSubjectGradeLevelOptions();
+        fetchSubjects();
+    }
+}
+
+function closeSubjectManagementModal() {
+    const modal = document.getElementById('subjectManagementModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function populateSubjectGradeLevelOptions() {
+    const subjectGradeLevelSelect = document.getElementById('subjectGradeLevel');
+    const gradeLevelFilterSelect = document.getElementById('gradeLevelFilter');
+    
+    if (subjectGradeLevelSelect) {
+        subjectGradeLevelSelect.innerHTML = '<option value="">غير محدد (مادة عامة)</option>';
+        gradeLevels.forEach(grade => {
+            const option = document.createElement('option');
+            option.value = grade;
+            option.textContent = grade;
+            subjectGradeLevelSelect.appendChild(option);
+        });
+    }
+    
+    if (gradeLevelFilterSelect) {
+        gradeLevelFilterSelect.innerHTML = '<option value="">جميع المستويات</option>';
+        gradeLevels.forEach(grade => {
+            const option = document.createElement('option');
+            option.value = grade;
+            option.textContent = grade;
+            gradeLevelFilterSelect.appendChild(option);
+        });
+    }
+}
+
+function refreshSubjectsTable(filteredSubjects = null) {
+    const tbody = document.getElementById('subjectsTableBody');
+    const countSpan = document.getElementById('subjectsCount');
+    if (!tbody || !countSpan) return;
+    
+    const displaySubjects = filteredSubjects || subjects;
+    countSpan.textContent = displaySubjects.length;
+    
+    if (displaySubjects.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: #666;">لا توجد مواد مضافة</td></tr>';
+        return;
+    }
+    
+    let html = '';
+    displaySubjects.forEach(s => {
+        html += `
+            <tr>
+                <td class="td-school">${s.name}</td>
+                <td class="td-school">${s.grade_level || '<span style="color: #999;">عامة</span>'}</td>
+                <td class="td-school">${new Date(s.created_at).toLocaleDateString('ar-EG')}</td>
+                <td class="td-school">
+                    <button class="btn-small btn-danger" onclick="deleteSubject(${s.id})" title="حذف المادة">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+function filterSubjects() {
+    const searchTerm = document.getElementById('subjectSearch')?.value.toLowerCase().trim() || '';
+    const selectedGrade = document.getElementById('gradeLevelFilter')?.value || '';
+    
+    const filtered = subjects.filter(s => {
+        const matchesName = s.name.toLowerCase().includes(searchTerm);
+        const matchesGrade = !selectedGrade || s.grade_level === selectedGrade;
+        return matchesName && matchesGrade;
+    });
+    
+    refreshSubjectsTable(filtered);
+}
+
+window.showSubjectManagementModal = showSubjectManagementModal;
+window.closeSubjectManagementModal = closeSubjectManagementModal;
+window.filterSubjects = filterSubjects;
+
 async function addSubject(e) {
     e.preventDefault();
     
     const subjectName = document.getElementById('subjectNameInput').value.trim();
-    const gradeLevel = document.getElementById('subjectGradeLevel')?.value;
+    const gradeLevel = document.getElementById('subjectGradeLevel')?.value || null;
     
     if (!subjectName) {
         showNotification('يرجى إدخال اسم المادة', 'error');
-        return;
-    }
-    
-    if (!gradeLevel) {
-        showNotification('يرجى اختيار المستوى الدراسي', 'error');
         return;
     }
     
@@ -2045,21 +2735,12 @@ async function addSubject(e) {
         });
         
         if (response.ok) {
-            const result = await response.json();
             showNotification('تم إضافة المادة بنجاح', 'success');
             document.getElementById('subjectNameInput').value = '';
-            if (document.getElementById('subjectGradeLevel')) {
-                document.getElementById('subjectGradeLevel').value = '';
-            }
             fetchSubjects(); // Refresh subjects list
-            
-            // Reload grade content if a grade level is selected
-            if (selectedGradeLevel) {
-                loadGradeSubjectsForLevel(selectedGradeLevel);
-            }
         } else {
             const error = await response.json();
-            showNotification(error.error || 'حدث خطأ في إضافة المادة', 'error');
+            showNotification(error.error_ar || error.error || 'حدث خطأ في إضافة المادة', 'error');
         }
     } catch (error) {
         console.error('Error saving subject:', error);
@@ -2195,8 +2876,188 @@ function generateUniqueStudentCode() {
     return code;
 }
 
+// Student management wrapper functions
+function viewStudentInfo(studentId) {
+    openStudentInfoModal(studentId);
+}
+
+// Make viewStudentInfo available globally
+window.viewStudentInfo = viewStudentInfo;
+
+function viewStudentGrades(studentId) {
+    openGradesModal(studentId);
+}
+
+function viewStudentAttendance(studentId) {
+    openAttendanceModal(studentId);
+}
+
+// Add Student Form Functions
+function showAddStudentForm(gradeLevel) {
+    // Create or get the form container
+    let formContainer = document.getElementById('addStudentFormContainer');
+    if (!formContainer) {
+        formContainer = document.createElement('div');
+        formContainer.id = 'addStudentFormContainer';
+        document.getElementById('gradeLevelContent').appendChild(formContainer);
+    }
+    
+    // Create grade level ID for form ID
+    const gradeLevelId = gradeLevel.replace(/\s+/g, '-');
+    
+    // Generate the form HTML
+    formContainer.innerHTML = `
+        <div id="addStudentFormWrapper-${gradeLevelId}" class="add-student-form" style="display: block; margin-top: 1rem; padding: 1.5rem; background: var(--background-secondary, #f8f9fa); border-radius: 8px;">
+            <h3 style="margin: 0 0 1rem 0;"><i class="fas fa-user-plus"></i> إضافة طالب جديد</h3>
+            <form id="addStudentForm-${gradeLevelId}">
+                <input type="hidden" name="grade_level" value="${gradeLevel}">
+                <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="form-group-school">
+                        <label for="full_name"><i class="fas fa-user"></i> اسم الطالب الرباعي *</label>
+                        <input type="text" id="full_name" name="full_name" class="form-input" required placeholder="أدخل الاسم الكامل">
+                    </div>
+                    <div class="form-group-school">
+                        <label for="room"><i class="fas fa-door-open"></i> القاعة *</label>
+                        <input type="text" id="room" name="room" class="form-input" required placeholder="أدخل رقم القاعة">
+                    </div>
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <div class="form-group-school">
+                        <label for="parent_contact"><i class="fas fa-phone"></i> رقم ولي الأمر</label>
+                        <input type="tel" id="parent_contact" name="parent_contact" class="form-input" placeholder="أدخل رقم الهاتف">
+                    </div>
+                    <div class="form-group-school">
+                        <label for="blood_type"><i class="fas fa-tint"></i> فصيلة الدم</label>
+                        <select id="blood_type" name="blood_type" class="form-input">
+                            <option value="">اختر فصيلة الدم</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 1rem;">
+                    <div class="form-group-school">
+                        <label for="chronic_disease"><i class="fas fa-heartbeat"></i> الأمراض المزمنة</label>
+                        <input type="text" id="chronic_disease" name="chronic_disease" class="form-input" placeholder="أدخل أي أمراض مزمنة إن وجدت">
+                    </div>
+                </div>
+                <div class="form-group-school" style="margin-top: 1rem;">
+                    <label for="notes"><i class="fas fa-sticky-note"></i> ملاحظات</label>
+                    <textarea id="notes" name="notes" class="textarea-school form-input" rows="3" placeholder="أي ملاحظات إضافية..."></textarea>
+                </div>
+                <div class="form-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button type="submit" class="btn-primary-school btn-primary">
+                        <i class="fas fa-save"></i> حفظ بيانات الطالب
+                    </button>
+                    <button type="button" class="btn-secondary-school" onclick="hideAddStudentForm('${gradeLevel}')">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    // Scroll to form
+    formContainer.scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideAddStudentForm(gradeLevel) {
+    const gradeLevelId = gradeLevel.replace(/\s+/g, '-');
+    const formContainer = document.getElementById('addStudentFormContainer');
+    if (formContainer) {
+        formContainer.remove();
+    }
+}
+
+function showBulkAddStudentForm(gradeLevel) {
+    // Create or get the form container
+    let formContainer = document.getElementById('bulkAddStudentFormContainer');
+    if (!formContainer) {
+        formContainer = document.createElement('div');
+        formContainer.id = 'bulkAddStudentFormContainer';
+        document.getElementById('gradeLevelContent').appendChild(formContainer);
+    }
+    
+    // Create grade level ID for form ID
+    const gradeLevelId = gradeLevel.replace(/\s+/g, '-');
+    
+    // Generate the bulk add form HTML
+    formContainer.innerHTML = `
+        <div id="bulkAddStudentForm-${gradeLevelId}" class="bulk-add-student-form" style="display: block; margin-top: 1rem; padding: 1.5rem; background: var(--background-secondary, #f8f9fa); border-radius: 8px;">
+            <h3 style="margin: 0 0 1rem 0;"><i class="fas fa-users"></i> إضافة جماعية للطلاب</h3>
+            <form id="bulkAddStudentForm-${gradeLevelId}">
+                <input type="hidden" name="bulk_grade_level" value="${gradeLevel}">
+                <div class="form-group-school" style="margin-bottom: 1rem;">
+                    <label for="bulk_room"><i class="fas fa-door-open"></i> القاعة *</label>
+                    <input type="text" id="bulk_room" name="bulk_room" class="form-input" required placeholder="أدخل رقم القاعة">
+                </div>
+                <div class="bulk-students-list" id="bulkStudentsList-${gradeLevelId}">
+                    <div class="bulk-student-row" style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" name="bulk_full_name_1" placeholder="اسم الطالب الرباعي" class="form-input" required>
+                        <button type="button" class="btn-danger-school btn-small" onclick="this.parentElement.remove()">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="btn-secondary-school btn-small" onclick="addBulkStudentRow('${gradeLevelId}')" style="margin: 0.5rem 0;">
+                    <i class="fas fa-plus"></i> إضافة صف آخر
+                </button>
+                <div class="form-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button type="submit" class="btn-primary-school btn-primary">
+                        <i class="fas fa-save"></i> حفظ جميع الطلاب
+                    </button>
+                    <button type="button" class="btn-secondary-school" onclick="hideBulkAddStudentForm('${gradeLevel}')">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    // Scroll to form
+    formContainer.scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideBulkAddStudentForm(gradeLevel) {
+    const formContainer = document.getElementById('bulkAddStudentFormContainer');
+    if (formContainer) {
+        formContainer.remove();
+    }
+}
+
+function addBulkStudentRow(gradeLevelId) {
+    const container = document.getElementById(`bulkStudentsList-${gradeLevelId}`);
+    if (!container) return;
+    
+    const rowCount = container.querySelectorAll('.bulk-student-row').length + 1;
+    
+    const row = document.createElement('div');
+    row.className = 'bulk-student-row';
+    row.style = 'display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; margin-bottom: 0.5rem;';
+    row.innerHTML = `
+        <input type="text" name="bulk_full_name_${rowCount}" placeholder="اسم الطالب الرباعي" class="form-input" required>
+        <button type="button" class="btn-danger-school btn-small" onclick="this.parentElement.remove()">
+            <i class="fas fa-trash"></i>
+        </button>
+    `;
+    
+    container.appendChild(row);
+}
+
 async function addStudent(e) {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (e.target.dataset.submitting === 'true') {
+        return;
+    }
+    e.target.dataset.submitting = 'true';
     
     const formData = new FormData(e.target);
     const editingId = e.target.dataset.editingId;
@@ -2245,6 +3106,15 @@ async function addStudent(e) {
                 delete e.target.dataset.editingId;
                 const submitBtn = e.target.querySelector('button[type="submit"]');
                 submitBtn.innerHTML = '<i class="fas fa-save"></i> حفظ بيانات الطالب';
+                
+                // Reset form title back to "Add Student"
+                const formContainer = e.target.closest('.add-student-form');
+                if (formContainer) {
+                    const titleElement = formContainer.querySelector('h3');
+                    if (titleElement) {
+                        titleElement.innerHTML = '<i class="fas fa-user-plus"></i> إضافة طالب جديد';
+                    }
+                }
             } else {
                 const error = await response.json();
                 showNotification(error.error || 'حدث خطأ في تحديث الطالب', 'error');
@@ -2292,6 +3162,9 @@ async function addStudent(e) {
     } catch (error) {
         console.error('Error saving student:', error);
         showNotification('حدث خطأ في الاتصال بالخادم', 'error');
+    } finally {
+        // Reset submission lock
+        e.target.dataset.submitting = 'false';
     }
 }
 
@@ -2516,6 +3389,11 @@ async function openGradesModal(studentId) {
         codeElem.onclick = () => copyToClipboard(student.student_code);
     }
     
+    // Make sure academic year is loaded
+    if (!currentAcademicYear || !selectedAcademicYearId) {
+        await loadAcademicYears();
+    }
+    
     // Show academic year info in the modal title
     const modalTitle = document.querySelector('#gradesModal .section-title');
     if (modalTitle && currentAcademicYear) {
@@ -2537,14 +3415,26 @@ async function openGradesModal(studentId) {
     
     // Load grades for the current academic year
     if (selectedAcademicYearId) {
-        const yearGrades = await getStudentGradesForYear(studentId, selectedAcademicYearId);
-        if (Object.keys(yearGrades).length > 0) {
-            // Replace student grades with current academic year grades only
-            student.grades = yearGrades;
-        } else {
-            // If no grades for current academic year, initialize with empty grades
+        try {
+            const yearGrades = await getStudentGradesForYear(studentId, selectedAcademicYearId);
+            if (yearGrades && Object.keys(yearGrades).length > 0) {
+                // Replace student grades with current academic year grades only
+                student.grades = yearGrades;
+                console.log('Grades loaded successfully:', yearGrades);
+            } else {
+                console.log('No grades found for academic year, initializing empty grades');
+                // If no grades for current academic year, initialize with empty grades
+                student.grades = {};
+            }
+        } catch (error) {
+            console.error('Error fetching student grades:', error);
+            showNotification('حدث خطأ أثناء تحميل الدرجات', 'error');
+            // Initialize with empty grades to allow the interface to work
             student.grades = {};
         }
+    } else {
+        console.warn('Selected academic year ID is not set, initializing with empty grades');
+        student.grades = {};
     }
     
     // Get the current grade level subjects - check both selectedGradeLevel and student's grade
@@ -2552,7 +3442,7 @@ async function openGradesModal(studentId) {
     
     // Show message if no subjects are found
     if (currentGradeSubjects.length === 0) {
-        showNotification('لا توجد مواد دراسية مضافة لهذا الصف. يرجى إضافة المواد أولاً.', 'error');
+        showNotification('لا توجد مواد دراسية مضافة لهذا الصف. يرجى إضافة المواد أولاً.', 'warning');
     }
     
     // Ensure student has grades for all current grade subjects
@@ -2569,7 +3459,19 @@ async function openGradesModal(studentId) {
         }
     });
     
+    // Also ensure that grades that exist but don't have corresponding subjects are preserved
+    for (const subjectName in student.grades) {
+        if (!currentGradeSubjects.some(subj => subj.name === subjectName)) {
+            // Add this subject to the list to make sure it's displayed
+            currentGradeSubjects.push({ name: subjectName });
+        }
+    }
+    
     renderGradesTable();
+    
+    // Display performance insights and predictions
+    displayPerformanceInsights(student);
+    
     document.getElementById('gradesModal').style.display = 'flex';
 }
 
@@ -2609,17 +3511,26 @@ function renderGradesTable() {
     // Get the current grade level subjects using the helper function
     let currentGradeSubjects = getSubjectsForStudent(student);
     
-    // If no subjects found, show a message in the table
+    // If no subjects found, check if there are any grades stored for the student
     if (currentGradeSubjects.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #6c757d;">
-            <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
-            لا توجد مواد دراسية مضافة لهذا الصف.<br>
-            <small>يرجى إضافة المواد الدراسية من قسم "المواد الدراسية" أولاً.</small>
-        </td></tr>`;
-        
-        // Reset totals and averages
-        resetTotalsAndAverages();
-        return;
+        // If there are grades but no subjects, try to get subjects from the grades themselves
+        if (student.grades && Object.keys(student.grades).length > 0) {
+            // Create subject objects from the grade keys
+            currentGradeSubjects = Object.keys(student.grades).map(subjectName => ({
+                name: subjectName
+            }));
+            console.log('Using grades to create subject list:', currentGradeSubjects);
+        } else {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #6c757d;">
+                <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                لا توجد مواد دراسية مضافة لهذا الصف.<br>
+                <small>يرجى إضافة المواد الدراسية من قسم "المواد الدراسية" أولاً.</small>
+            </td></tr>`;
+            
+            // Reset totals and averages
+            resetTotalsAndAverages();
+            return;
+        }
     }
     
     // Initialize totals for each period
@@ -2713,8 +3624,9 @@ function renderGradesTable() {
         // Update recommendations
         const recommendationsElem = document.getElementById('studentRecommendations');
         if (recommendationsElem) {
-            if (prediction.recommendations.length > 0) {
-                recommendationsElem.innerHTML = prediction.recommendations.map(r => `<div>• ${r}</div>`).join('');
+            if (prediction.recommendations) {
+                // recommendations is now HTML string from generateProfessionalRecommendations
+                recommendationsElem.innerHTML = prediction.recommendations;
             } else {
                 recommendationsElem.textContent = '-';
             }
@@ -3087,8 +3999,9 @@ function recalculateInsights() {
     // Update recommendations
     const recommendationsElem = document.getElementById('studentRecommendations');
     if (recommendationsElem) {
-        if (prediction.recommendations.length > 0) {
-            recommendationsElem.innerHTML = prediction.recommendations.map(r => `<div>• ${r}</div>`).join('');
+        if (prediction.recommendations) {
+            // recommendations is now HTML string from generateProfessionalRecommendations
+            recommendationsElem.innerHTML = prediction.recommendations;
         } else {
             recommendationsElem.textContent = '-';
         }
@@ -3527,19 +4440,30 @@ function editStudent(id) {
     
     // Get the grade level from the student's grade
     let gradeLevelId = '';
+    let gradeLevelName = '';
     if (selectedGradeLevel) {
         const parts = selectedGradeLevel.split(' - ');
-        const originalGradeLevel = parts.length > 1 ? parts[1] : selectedGradeLevel;
-        gradeLevelId = originalGradeLevel.replace(/\s+/g, '-');
+        gradeLevelName = parts.length > 1 ? parts[1] : selectedGradeLevel;
+        gradeLevelId = gradeLevelName.replace(/\s+/g, '-');
     }
     
-    // Fill the form with student data for editing
-    const form = document.getElementById(`addStudentForm-${gradeLevelId}`) || document.getElementById('addStudentForm');
+    // Check if form exists, if not, create it first
+    let form = document.getElementById(`addStudentForm-${gradeLevelId}`) || document.getElementById('addStudentForm');
+    if (!form) {
+        // Create the form by calling showAddStudentForm
+        if (selectedGradeLevel) {
+            showAddStudentForm(gradeLevelName);
+            // Now get the form after it's created
+            form = document.getElementById(`addStudentForm-${gradeLevelId}`);
+        }
+    }
+    
     if (!form) {
         showNotification('لم يتم العثور على نموذج التعديل', 'error');
         return;
     }
     
+    // Fill the form with student data for editing
     form.full_name.value = student.full_name;
     form.room.value = student.room;
     if (form.notes) {
@@ -3560,6 +4484,15 @@ function editStudent(id) {
     // Change button text and add update functionality
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.innerHTML = '<i class="fas fa-save"></i> تحديث بيانات الطالب';
+    
+    // Update form title to indicate edit mode
+    const formContainer = form.closest('.add-student-form');
+    if (formContainer) {
+        const titleElement = formContainer.querySelector('h3');
+        if (titleElement) {
+            titleElement.innerHTML = `<i class="fas fa-user-edit"></i> تعديل بيانات الطالب: ${student.full_name}`;
+        }
+    }
     
     // Store the student ID for updating
     form.dataset.editingId = id;
@@ -3779,6 +4712,12 @@ function resetBulkForm(gradeLevelId) {
 async function addBulkStudents(e, originalGradeLevel) {
     e.preventDefault();
     
+    // Prevent double submission
+    if (e.target.dataset.submitting === 'true') {
+        return;
+    }
+    e.target.dataset.submitting = 'true';
+    
     const formData = new FormData(e.target);
     const room = formData.get('bulk_room');
     const grade_level = formData.get('bulk_grade_level'); // Get the grade level from hidden input
@@ -3786,6 +4725,7 @@ async function addBulkStudents(e, originalGradeLevel) {
     // Validate required fields
     if (!room) {
         showNotification('جميع الحقول المطلوبة يجب أن تكون مملوءة', 'error');
+        e.target.dataset.submitting = 'false';
         return;
     }
     
@@ -3871,6 +4811,9 @@ async function addBulkStudents(e, originalGradeLevel) {
     } else {
         showNotification('فشل تسجيل جميع الطلاب', 'error');
     }
+    
+    // Reset submission lock
+    e.target.dataset.submitting = 'false';
 }
 
 function setupKeyboardShortcuts() {
@@ -3922,227 +4865,164 @@ function setupKeyboardShortcuts() {
     }
 }
 
-// Function to show the add subject form for a specific grade level
+// Subject management is now centralized at school level - see showSubjectManagementModal()
+// Grade-level specific subject functions are deprecated
 function showAddSubjectForm(gradeLevel) {
-    const formId = `subjectForm-${gradeLevel.replace(/\s+/g, '-')}`;
-    const form = document.getElementById(formId);
-    if (form) {
-        form.style.display = 'block';
-        // Also show the temporary subjects list if there are any
-        renderTempSubjects(gradeLevel);
-    }
+    showNotification('يرجى إدارة المواد من لوحة تحكم المدرسة - تبويب إدارة المواد', 'info');
 }
 
-// Function to hide the add subject form for a specific grade level
 function hideAddSubjectForm(gradeLevel) {
-    const formId = `subjectForm-${gradeLevel.replace(/\s+/g, '-')}`;
-    const form = document.getElementById(formId);
-    if (form) {
-        form.style.display = 'none';
-        // Clear the form inputs
-        form.reset();
-    }
-    
-    // Hide the temporary subjects list
-    const tempSubjectsListId = `tempSubjectsList-${gradeLevel.replace(/\s+/g, '-')}`;
-    const tempSubjectsList = document.getElementById(tempSubjectsListId);
-    if (tempSubjectsList) {
-        tempSubjectsList.style.display = 'none';
-    }
+    // Form is no longer shown at grade level
 }
 
-// Temporary storage for new subjects before saving
+function addSubjectAutoSave(gradeLevel) {
+    showNotification('يرجى إدارة المواد من لوحة تحكم المدرسة - تبويب إدارة المواد', 'info');
+}
+
+// Temporary storage kept for legacy compatibility
 let tempSubjects = {};
 
-// Function to add a subject to temporary storage
+// Legacy functions - no longer used at grade level
 function addSubjectToGradeTemp(gradeLevel) {
-    const formId = `subjectForm-${gradeLevel.replace(/\s+/g, '-')}`;
-    const form = document.getElementById(formId);
-    
-    if (!form) return;
-    
-    const subjectName = form.subjectName.value.trim();
-    
-    if (!subjectName) {
-        showNotification('يرجى إدخال اسم المادة', 'error');
-        return;
-    }
-    
-    // Initialize temp subjects array for this grade level if not exists
-    if (!tempSubjects[gradeLevel]) {
-        tempSubjects[gradeLevel] = [];
-    }
-    
-    // Check if subject already exists in temp storage
-    const exists = tempSubjects[gradeLevel].some(subject => subject.name === subjectName);
-    if (exists) {
-        showNotification('المادة موجودة بالفعل في القائمة المؤقتة', 'error');
-        return;
-    }
-    
-    // Add to temporary storage
-    tempSubjects[gradeLevel].push({
-        name: subjectName,
-        grade_level: gradeLevel
-    });
-    
-    // Clear the input
-    form.subjectName.value = '';
-    
-    // Show notification
-    showNotification('تم إضافة المادة إلى القائمة المؤقتة', 'success');
-    
-    // Update the temporary subjects display
-    renderTempSubjects(gradeLevel);
+    showNotification('يرجى إدارة المواد من لوحة تحكم المدرسة - تبويب إدارة المواد', 'info');
 }
 
-// Function to render temporary subjects
 function renderTempSubjects(gradeLevel) {
-    const tempSubjectsListId = `tempSubjectsList-${gradeLevel.replace(/\s+/g, '-')}`;
-    const tempSubjectsGridId = `tempSubjectsList-${gradeLevel.replace(/\s+/g, '-')}`.replace('List', 'List').replace('-list', '-grid');
-    
-    const tempSubjectsList = document.getElementById(tempSubjectsListId);
-    const tempSubjectsGrid = tempSubjectsList ? tempSubjectsList.querySelector('.temp-subjects-grid') : null;
-    
-    if (!tempSubjectsList || !tempSubjectsGrid) return;
-    
-    // Check if there are temporary subjects for this grade level
-    const subjects = tempSubjects[gradeLevel] || [];
-    
-    if (subjects.length > 0) {
-        tempSubjectsList.style.display = 'block';
+    // No longer rendering temporary subjects at grade level
+}
+
+// Export teachers to Excel
+function exportTeachersToExcel() {
+    if (!teachers || teachers.length === 0) {
+        showNotification('لا توجد بيانات معلمين لتصديرها', 'warning');
+        return;
+    }
+
+    try {
+        // Prepare data for export
+        const exportData = teachers.map(teacher => ({
+            'الاسم': teacher.full_name || teacher.name,
+            'الرمز': teacher.teacher_code,
+            'البريد الإلكتروني': teacher.email || '',
+            'رقم الهاتف': teacher.phone || '',
+            'التخصص': teacher.specialization || '',
+            'المواد المعينة': teacher.assigned_subjects ? teacher.assigned_subjects.map(s => s.name).join(', ') : '',
+            'عدد المواد': teacher.assigned_subjects ? teacher.assigned_subjects.length : 0,
+            'تاريخ الإنشاء': teacher.created_at ? new Date(teacher.created_at).toLocaleDateString('ar-SA') : ''
+        }));
+
+        // Create worksheet
+        const ws = XLSX.utils.json_to_sheet(exportData);
         
-        // Sort temporary subjects alphabetically for display
-        const sortedSubjects = subjects.map((s, originalIndex) => ({ ...s, originalIndex }))
-            .sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'المعلمين');
         
-        let html = '';
-        sortedSubjects.forEach((subject) => {
-            html += '<div class="subject-card temp-subject-card" data-index="' + subject.originalIndex + '">' +
-                    '<span class="subject-name">' + subject.name + '</span>' +
-                    '<div class="subject-actions">' +
-                    '<button class="btn-small btn-danger" onclick="removeTempSubject(\'' + gradeLevel + '\', ' + subject.originalIndex + ')">' +
-                    '<i class="fas fa-trash"></i> حذف' +
-                    '</button>' +
-                    '</div>' +
-                    '</div>';
-        });
+        // Generate filename with timestamp
+        const fileName = `المعلمين_${getCurrentAcademicYearName()}_${new Date().toISOString().split('T')[0]}.xlsx`;
         
-        tempSubjectsGrid.innerHTML = html;
-    } else {
-        tempSubjectsList.style.display = 'none';
-        tempSubjectsGrid.innerHTML = '';
+        // Export to file
+        XLSX.writeFile(wb, fileName);
+        
+        showNotification('تم تصدير بيانات المعلمين بنجاح', 'success');
+    } catch (error) {
+        console.error('Error exporting teachers:', error);
+        showNotification('حدث خطأ في تصدير بيانات المعلمين', 'error');
     }
 }
 
-async function addBulkStudents(e, originalGradeLevel) {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const room = formData.get('bulk_room');
-    const grade_level = formData.get('bulk_grade_level'); // Get the grade level from hidden input
-    
-    // Validate required fields
-    if (!room) {
-        showNotification('جميع الحقول المطلوبة يجب أن تكون مملوءة', 'error');
+// Export all students to Excel
+function exportStudentsToExcel() {
+    if (!students || students.length === 0) {
+        showNotification('لا توجد بيانات طلاب لتصديرها', 'warning');
         return;
     }
-    
-    // Get all student rows
-    const studentRows = document.querySelectorAll('.bulk-student-row');
-    const students = [];
-    
-    for (let i = 0; i < studentRows.length; i++) {
-        const fullName = formData.get('bulk_full_name_' + (i + 1));
-        const notes = formData.get('bulk_notes_' + (i + 1));
+
+    try {
+        // Prepare data for export
+        const exportData = students.map(student => ({
+            'الاسم': student.full_name,
+            'الرمز': student.student_code,
+            'الصف': student.grade,
+            'القاعة': student.room || '',
+            'البريد الإلكتروني': student.email || '',
+            'رقم الهاتف': student.phone || '',
+            'تاريخ الإنشاء': student.created_at ? new Date(student.created_at).toLocaleDateString('ar-SA') : ''
+        }));
+
+        // Create worksheet
+        const ws = XLSX.utils.json_to_sheet(exportData);
         
-        // Validate required fields for each student
-        if (!fullName) {
-            showNotification('جميع الحقول المطلوبة لكل طالب يجب أن تكون مملوءة', 'error');
-            return;
-        }
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'الطلاب');
         
-        if (fullName) {
-            // Create grade string (using the combined grade level for proper display)
-            const gradeString = selectedGradeLevel || (currentSchool && currentSchool.level ? (currentSchool.level + ' - ' + grade_level) : grade_level);
-            
-            students.push({
-                full_name: fullName,
-                grade: gradeString,
-                room: room,
-                notes: notes || ''
-            });
-        }
-    }
-    
-    if (students.length === 0) {
-        showNotification('يرجى إدخال بيانات طالب واحد على الأقل', 'error');
-        return;
-    }
-    
-    // Add students
-    let successCount = 0;
-    let errorCount = 0;
-    
-    for (const student of students) {
-        try {
-            const response = await fetch('/api/school/' + currentSchool.id + '/student', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify(student)
-            });
-            
-            if (response.ok) {
-                successCount++;
-            } else {
-                errorCount++;
-            }
-        } catch (error) {
-            console.error('Error saving student:', error);
-            errorCount++;
-        }
-    }
-    
-    // Show result notification
-    if (errorCount === 0) {
-        showNotification('تم تسجيل ' + successCount + ' طالب بنجاح!', 'success');
-        resetBulkForm(originalGradeLevel.replace(/\s+/g, '-'));
-        await fetchStudents(); // Refresh student list
+        // Generate filename with timestamp
+        const fileName = `الطلاب_${getCurrentAcademicYearName()}_${new Date().toISOString().split('T')[0]}.xlsx`;
         
-        // Reload grade content
-        if (selectedGradeLevel) {
-            // Extract the original grade level from the combined grade level
-            const parts = selectedGradeLevel.split(' - ');
-            const originalGradeLevel = parts.length > 1 ? parts[1] : selectedGradeLevel;
-            loadGradeSubjectsForLevel(selectedGradeLevel, originalGradeLevel);
-        }
-    } else if (successCount > 0) {
-        showNotification('تم تسجيل ' + successCount + ' طالب بنجاح، فشل تسجيل ' + errorCount + ' طالب', 'info');
-        await fetchStudents(); // Refresh student list
+        // Export to file
+        XLSX.writeFile(wb, fileName);
         
-        // Reload grade content
-        if (selectedGradeLevel) {
-            // Extract the original grade level from the combined grade level
-            const parts = selectedGradeLevel.split(' - ');
-            const originalGradeLevel = parts.length > 1 ? parts[1] : selectedGradeLevel;
-            loadGradeSubjectsForLevel(selectedGradeLevel, originalGradeLevel);
-        }
-    } else {
-        showNotification('فشل تسجيل جميع الطلاب', 'error');
+        showNotification('تم تصدير بيانات الطلاب بنجاح', 'success');
+    } catch (error) {
+        console.error('Error exporting students:', error);
+        showNotification('حدث خطأ في تصدير بيانات الطلاب', 'error');
     }
 }
 
-// Add manual refresh function for debugging
-function refreshStudentsList(gradeLevel) {
-    console.log('Manual refresh triggered for grade:', gradeLevel);
-    fetchStudents();
-    
-    // If a specific grade level is provided, reload its content
-    if (gradeLevel) {
-        // Create combined grade level
-        const combinedGradeLevel = currentSchool && currentSchool.level ? `${currentSchool.level} - ${gradeLevel}` : gradeLevel;
-        loadGradeSubjectsForLevel(combinedGradeLevel, gradeLevel);
+// Export students by grade level to Excel
+function exportStudentsByGradeToExcel(gradeLevel) {
+    if (!students || students.length === 0) {
+        showNotification('لا توجد بيانات طلاب لتصديرها', 'warning');
+        return;
     }
+
+    // Filter students by grade level
+    const gradeStudents = students.filter(student => student.grade === gradeLevel);
+    
+    if (gradeStudents.length === 0) {
+        showNotification(`لا توجد بيانات طلاب في الصف ${gradeLevel}`, 'warning');
+        return;
+    }
+
+    try {
+        // Prepare data for export
+        const exportData = gradeStudents.map(student => ({
+            'الاسم': student.full_name,
+            'الرمز': student.student_code,
+            'الصف': student.grade,
+            'القاعة': student.room || '',
+            'البريد الإلكتروني': student.email || '',
+            'رقم الهاتف': student.phone || '',
+            'تاريخ الإنشاء': student.created_at ? new Date(student.created_at).toLocaleDateString('ar-SA') : ''
+        }));
+
+        // Create worksheet
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, `الطلاب_${gradeLevel}`);
+        
+        // Generate filename with timestamp
+        const fileName = `طلاب_${gradeLevel}_${getCurrentAcademicYearName()}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        
+        // Export to file
+        XLSX.writeFile(wb, fileName);
+        
+        showNotification(`تم تصدير بيانات طلاب الصف ${gradeLevel} بنجاح`, 'success');
+    } catch (error) {
+        console.error('Error exporting students by grade:', error);
+        showNotification('حدث خطأ في تصدير بيانات الطلاب', 'error');
+    }
+}
+
+// Helper function to get current academic year name
+function getCurrentAcademicYearName() {
+    if (currentAcademicYear && currentAcademicYear.name) {
+        return currentAcademicYear.name.replace(/\//g, '-');
+    }
+    return 'غير محدد';
 }
 
 // Function to add a subject to a specific grade level

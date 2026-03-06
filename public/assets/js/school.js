@@ -6205,6 +6205,23 @@ async function openStudentHistoryModal(studentId) {
                         <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
                             <p><strong>الصف الحالي:</strong> ${result.student.grade}</p>
                             <p><strong>رمز الطالب:</strong> <code class="code-btn" onclick="copyToClipboard('${result.student.student_code}')" style="cursor: pointer;">${result.student.student_code}</code></p>
+                            <p><strong>عدد السنوات الدراسية:</strong> ${Object.keys(history.grades).length} سنة</p>
+                        </div>
+                        
+                        <!-- Academic Years Summary -->
+                        <div style="margin-bottom: 1.5rem; padding: 1rem; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196F3;">
+                            <h4 style="margin-top: 0; color: #1976D2;"><i class="fas fa-list"></i> ملخص السنوات الدراسية</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;">
+                                ${Object.entries(history.grades).map(([yearName, yearData]) => `
+                                    <div style="background: white; padding: 0.75rem; border-radius: 6px; border: 1px solid #bbdefb; text-align: center;">
+                                        <strong style="color: #1976D2;">${yearName}</strong>
+                                        <div style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">
+                                            ${Object.keys(yearData.subjects).length} مواد
+                                        </div>
+                                        ${yearData.year_info.id === currentAcademicYear?.id ? '<span style="font-size: 0.75rem; background: #4CAF50; color: white; padding: 0.2rem 0.5rem; border-radius: 3px; display: inline-block; margin-top: 0.25rem;">الحالي</span>' : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
                         
                         <div class="tabs" style="margin-bottom: 1.5rem;">
@@ -6213,7 +6230,10 @@ async function openStudentHistoryModal(studentId) {
                         </div>
                         
                         <div id="gradesHistoryTab" class="tab-content active">
-                            <h4>الدرجات حسب السنوات الدراسية</h4>
+                            <h4><i class="fas fa-graduation-cap"></i> الدرجات حسب السنوات الدراسية</h4>
+                            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+                                <i class="fas fa-info-circle"></i> يتم حفظ سجل كل سنة دراسية بشكل منفصل. عند ترقية الطالب، يتم إنشاء سجل جديد للسنة الحالية.
+                            </p>
                             ${Object.keys(history.grades).length > 0 ? 
                                 Object.entries(history.grades).map(([yearName, yearData]) => `
                                     <div style="margin-bottom: 1.5rem; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden;">
@@ -6255,7 +6275,7 @@ async function openStudentHistoryModal(studentId) {
                         </div>
                         
                         <div id="attendanceHistoryTab" class="tab-content" style="display: none;">
-                            <h4>الحضور حسب السنوات الدراسية</h4>
+                            <h4><i class="fas fa-calendar-check"></i> الحضور والغياب حسب السنوات الدراسية</h4>
                             ${Object.keys(history.attendance).length > 0 ? 
                                 Object.entries(history.attendance).map(([yearName, yearAttendance]) => `
                                     <div style="margin-bottom: 1.5rem; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden;">

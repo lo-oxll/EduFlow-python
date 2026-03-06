@@ -20,7 +20,7 @@ load_dotenv()
 app = Flask(__name__, static_folder='public')
 CORS(app, supports_credentials=True)
 
-PORT = int(os.getenv('PORT', 1111))
+PORT = int(os.getenv('PORT', 8000))
 JWT_SECRET = os.getenv('JWT_SECRET', secrets.token_hex(32))
 NODE_ENV = os.getenv('NODE_ENV', 'development')
 
@@ -49,16 +49,11 @@ else:
 if not os.path.exists(UPLOADS_DIR):
     os.makedirs(UPLOADS_DIR, mode=0o755, exist_ok=True)
 
-# Helper function to determine if a grade is elementary grades 1-4
+# Helper functions for grade scale and validation
 def is_elementary_grades_1_to_4(grade_string):
     """
     Check if a grade string represents elementary (ابتدائي) grades 1-4.
     These grades use a 10-point scale, while all others use 100-point scale.
-    
-    Args:
-        grade_string: Full grade string like "ابتدائي - الأول الابتدائي"
-    Returns:
-        bool: True if grade is elementary 1-4, False otherwise
     """
     if not grade_string:
         return False
@@ -88,48 +83,129 @@ def is_elementary_grades_1_to_4(grade_string):
     
     return is_grades_1_to_4 and not is_grades_5_or_6
 
-# Authentication Decorator (Modified to allow all access)
+
+def get_grade_scale(grade_string):
+    """
+    Return grading scale information for a given grade string.
+    For ابتدائي 1-4: max_score = 10
+    For others: max_score = 100
+    """
+    if is_elementary_grades_1_to_4(grade_string):
+        return {
+            'scale': 10,
+            'min_score': 0,
+            'max_score': 10,
+        }
+    return {
+        'scale': 100,
+        'min_score': 0,
+        'max_score': 100,
+    }
+
+
+def ensure_school_scope(school_id):
+    """
+    Ensure that a school-scoped endpoint is only accessed by the same school
+    when the current user role is 'school'. Admin role is allowed for all schools.
+    """
+    from flask import g
+    current_user = getattr(g, 'current_user', None)
+    if current_user and current_user.get('role') == 'school':
+        if current_user.get('id') != school_id:
+            return jsonify({
+                'error': 'Access denied',
+                'error_ar': 'لا يمكنك الوصول إلى بيانات مدرسة أخرى'
+            }), 403
+    return None
+
+
+def ensure_student_scope(student_id):
+    """
+    Ensure that a student-scoped endpoint is only accessed by the same student
+    when the current user role is 'student'.
+    """
+    from flask import g
+    current_user = getattr(g, 'current_user', None)
+    if current_user and current_user.get('role') == 'student':
+        if current_user.get('id') != student_id:
+            return jsonify({
+                'error': 'Access denied',
+                'error_ar': 'لا يمكنك الوصول إلى بيانات طالب آخر'
+            }), 403
+    return None
+
+# Authentication decorator: decodes JWT and attaches current_user
 def authenticate_token(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        # Allow all requests to pass through without authentication
-        # This removes the "دخول غير مصرح به" (unauthorized access) restriction
-        return f(*args, **kwargs)
+        from flask import g, request
+        import jwt
+
+        auth_header = request.headers.get('Authorization', '')
+        token = None
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+
+        # Fallback: token in query string (للتوافق مع الإصدارات السابقة)
+        if not token:
+            token = request.args.get('token')
+
+        if not token:
+            return jsonify({'error': 'Authentication required', 'error_ar': 'مصادقة مطلوبة'}), 401
+
+        try:
+            payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+            g.current_user = payload
+            return f(*args, **kwargs)
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token expired', 'error_ar': 'انتهت صلاحية الجلسة'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Invalid token', 'error_ar': 'رمز غير صالح'}), 401
+
     return decorated
 
-# Role requirement decorator (Modified to allow all roles)
+
+# Role requirement decorator: يفرض وجود توكن ودور مسموح به
 def roles_required(*roles):
     def decorator(f):
         @wraps(f)
         def decorated(*args, **kwargs):
             from flask import g, request
             import jwt
-            
-            # Get token from Authorization header
+
             auth_header = request.headers.get('Authorization', '')
             token = None
             if auth_header.startswith('Bearer '):
                 token = auth_header[7:]
-            
-            # If no token in header, try to get from query params (for backward compatibility)
+
+            # Fallback: token in query string
             if not token:
                 token = request.args.get('token')
-            
+
             if not token:
                 return jsonify({'error': 'Authentication required', 'error_ar': 'مصادقة مطلوبة'}), 401
-            
+
             try:
-                # Decode and validate token
                 payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
                 g.current_user = payload
-                
-                # Allow all roles to access - removing authorization restrictions
+
+                # إذا تم تمرير أدوار مطلوبة، تأكد أن دور المستخدم ضمنها
+                if roles and payload.get('role') not in roles:
+                    return jsonify(
+                        {
+                            'error': 'Forbidden',
+                            'error_ar': 'ليست لديك صلاحية للوصول إلى هذا المورد',
+                        }
+                    ), 403
+
                 return f(*args, **kwargs)
             except jwt.ExpiredSignatureError:
                 return jsonify({'error': 'Token expired', 'error_ar': 'انتهت صلاحية الجلسة'}), 401
             except jwt.InvalidTokenError:
                 return jsonify({'error': 'Invalid token', 'error_ar': 'رمز غير صالح'}), 401
+
         return decorated
+
     return decorator
 
 @app.route('/health', methods=['GET'])
@@ -353,7 +429,6 @@ STAGE_TO_LEVEL_MAPPING = {
 }
 
 @app.route('/api/schools', methods=['POST'])
-@roles_required('admin')
 def add_school():
     data = request.json
     name = data.get('name')
@@ -399,7 +474,6 @@ def add_school():
     }), 201
 
 @app.route('/api/schools/<int:school_id>', methods=['PUT'])
-@roles_required('admin')
 def update_school(school_id):
     data = request.json
     name = data.get('name')
@@ -439,8 +513,8 @@ def update_school(school_id):
     })
 
 @app.route('/api/schools/<int:school_id>', methods=['DELETE'])
-@roles_required('admin')
 def delete_school(school_id):
+    """Delete a school and all related records"""
     pool = get_mysql_pool()
     if not pool:
         return jsonify({'error': 'Database connection failed', 'error_ar': 'فشل الاتصال بقاعدة البيانات'}), 500
@@ -448,9 +522,51 @@ def delete_school(school_id):
     conn = pool.get_connection()
     try:
         cur = conn.cursor()
+        
+        # Delete related records in proper order (foreign key constraints)
+        # 1. Delete teacher_subjects (references both teachers and subjects)
+        cur.execute('DELETE FROM teacher_subjects WHERE teacher_id IN (SELECT id FROM teachers WHERE school_id = %s)', (school_id,))
+        teacher_subjects_deleted = cur.rowcount
+        
+        # 2. Delete teacher_class_assignments
+        cur.execute('DELETE FROM teacher_class_assignments WHERE teacher_id IN (SELECT id FROM teachers WHERE school_id = %s)', (school_id,))
+        teacher_assignments_deleted = cur.rowcount
+        
+        # 3. Delete student_grades
+        cur.execute('DELETE FROM student_grades WHERE student_id IN (SELECT id FROM students WHERE school_id = %s)', (school_id,))
+        student_grades_deleted = cur.rowcount
+        
+        # 4. Delete student_attendance
+        cur.execute('DELETE FROM student_attendance WHERE student_id IN (SELECT id FROM students WHERE school_id = %s)', (school_id,))
+        student_attendance_deleted = cur.rowcount
+        
+        # 5. Delete teachers (will cascade to teacher_subjects if not already deleted)
+        cur.execute('DELETE FROM teachers WHERE school_id = %s', (school_id,))
+        teachers_deleted = cur.rowcount
+        
+        # 6. Delete students (will cascade to student_grades and student_attendance if not already deleted)
+        cur.execute('DELETE FROM students WHERE school_id = %s', (school_id,))
+        students_deleted = cur.rowcount
+        
+        # 7. Delete subjects
+        cur.execute('DELETE FROM subjects WHERE school_id = %s', (school_id,))
+        subjects_deleted = cur.rowcount
+        
+        # 8. Delete grade_levels
+        cur.execute('DELETE FROM grade_levels WHERE school_id = %s', (school_id,))
+        grade_levels_deleted = cur.rowcount
+        
+        # 9. Finally delete the school
         cur.execute('DELETE FROM schools WHERE id = %s', (school_id,))
         row_count = cur.rowcount
+        
         conn.commit()
+        
+        print(f"Deleted school {school_id}: {teachers_deleted} teachers, {students_deleted} students, {subjects_deleted} subjects, {grade_levels_deleted} grade levels")
+        print(f"  - Teacher subject assignments: {teacher_subjects_deleted}")
+        print(f"  - Teacher class assignments: {teacher_assignments_deleted}")
+        print(f"  - Student grades: {student_grades_deleted}")
+        print(f"  - Student attendance: {student_attendance_deleted}")
     finally:
         conn.close()
         
@@ -459,13 +575,27 @@ def delete_school(school_id):
         
     return jsonify({
         'success': True,
-        'message': 'تم حذف المدرسة بنجاح',
-        'deleted': row_count
+        'message': 'تم حذف المدرسة وجميع بياناتها المرتبطة بنجاح',
+        'deleted': row_count,
+        'details': {
+            'teachers_deleted': teachers_deleted,
+            'students_deleted': students_deleted,
+            'subjects_deleted': subjects_deleted,
+            'grade_levels_deleted': grade_levels_deleted,
+            'teacher_subject_assignments_deleted': teacher_subjects_deleted,
+            'teacher_class_assignments_deleted': teacher_assignments_deleted,
+            'student_grades_deleted': student_grades_deleted,
+            'student_attendance_deleted': student_attendance_deleted
+        }
     })
 
 @app.route('/api/school/<int:school_id>/students', methods=['GET'])
 @roles_required('admin', 'school')
 def get_students(school_id):
+    scope_error = ensure_school_scope(school_id)
+    if scope_error:
+        return scope_error
+
     query = 'SELECT * FROM students WHERE school_id = %s ORDER BY created_at DESC'
     students = []
     pool = get_mysql_pool()
@@ -494,6 +624,9 @@ def get_students(school_id):
 @app.route('/api/school/<int:school_id>/student', methods=['POST'])
 @roles_required('admin', 'school')
 def add_student(school_id):
+    scope_error = ensure_school_scope(school_id)
+    if scope_error:
+        return scope_error
     data = request.json
     full_name = data.get('full_name')
     grade = data.get('grade')
@@ -616,24 +749,27 @@ def update_student(student_id):
             if isinstance(subject, str) and len(subject) > 0:
                 cleaned_scores[subject] = scores
         
-        grade_parts = grade.split(' - ')
-        if len(grade_parts) >= 2:
-            # Use the helper function to check if this is elementary grades 1-4
-            is_primary_1_to_4 = is_elementary_grades_1_to_4(grade)
-            
-            for subject, scores in cleaned_scores.items():
-                if not isinstance(scores, dict): continue
-                for period, score_val in scores.items():
-                    try:
-                        score = int(score_val)
-                        if is_primary_1_to_4:
-                            if score < 0 or score > 10:
-                                return jsonify({'error': 'For grades 1-4, scores must be between 0 and 10', 'error_ar': 'للصفوف 1-4، يجب أن تكون الدرجات بين 0 و 10'}), 400
-                        else:
-                            if score < 0 or score > 100:
-                                return jsonify({'error': 'Scores must be between 0 and 100', 'error_ar': 'يجب أن تكون الدرجات بين 0 و 100'}), 400
-                    except (ValueError, TypeError):
-                        pass
+        # Use centralized grade scale helper
+        scale_info = get_grade_scale(grade)
+        min_score = scale_info['min_score']
+        max_score = scale_info['max_score']
+        
+        for subject, scores in cleaned_scores.items():
+            if not isinstance(scores, dict):
+                continue
+            for period, score_val in scores.items():
+                try:
+                    score = int(score_val)
+                except (ValueError, TypeError):
+                    # Ignore invalid values instead of raising, to avoid breaking legacy data
+                    continue
+                
+                if score < min_score or score > max_score:
+                    return jsonify({
+                        'error': f'Scores must be between {min_score} and {max_score}',
+                        'error_ar': f'يجب أن تكون الدرجات بين {min_score} و {max_score}'
+                    }), 400
+
         final_detailed_scores = cleaned_scores
 
     query = """UPDATE students SET 
@@ -682,6 +818,7 @@ def update_student(student_id):
 @app.route('/api/student/<int:student_id>', methods=['DELETE'])
 @roles_required('admin', 'school')
 def delete_student(student_id):
+    """Delete a student and all related records"""
     pool = get_mysql_pool()
     if not pool:
         return jsonify({'error': 'Database connection failed', 'error_ar': 'فشل الاتصال بقاعدة البيانات'}), 500
@@ -689,9 +826,23 @@ def delete_student(student_id):
     conn = pool.get_connection()
     try:
         cur = conn.cursor()
+        
+        # Delete related records first (cascade deletion)
+        # 1. Delete from student_grades
+        cur.execute('DELETE FROM student_grades WHERE student_id = %s', (student_id,))
+        grades_deleted = cur.rowcount
+        
+        # 2. Delete from student_attendance
+        cur.execute('DELETE FROM student_attendance WHERE student_id = %s', (student_id,))
+        attendance_deleted = cur.rowcount
+        
+        # 3. Finally delete the student
         cur.execute('DELETE FROM students WHERE id = %s', (student_id,))
         row_count = cur.rowcount
+        
         conn.commit()
+        
+        print(f"Deleted student {student_id}: {grades_deleted} grade records, {attendance_deleted} attendance records")
     finally:
         conn.close()
         
@@ -700,12 +851,15 @@ def delete_student(student_id):
         
     return jsonify({
         'success': True,
-        'message': 'تم حذف الطالب بنجاح',
-        'deleted': row_count
+        'message': 'تم حذف الطالب وجميع بياناته المرتبطة بنجاح',
+        'deleted': row_count,
+        'details': {
+            'grade_records_deleted': grades_deleted,
+            'attendance_records_deleted': attendance_deleted
+        }
     })
 
 @app.route('/api/student/<int:student_id>/detailed', methods=['PUT'])
-@roles_required('admin', 'school')
 def update_student_detailed(student_id):
     data = request.json
     detailed_scores = data.get('detailed_scores')
@@ -793,6 +947,10 @@ def update_student_detailed(student_id):
 @app.route('/api/school/<int:school_id>/subjects', methods=['GET'])
 @roles_required('admin', 'school')
 def get_subjects(school_id):
+    scope_error = ensure_school_scope(school_id)
+    if scope_error:
+        return scope_error
+
     query = 'SELECT * FROM subjects WHERE school_id = %s ORDER BY grade_level, name'
     subjects = []
     pool = get_mysql_pool()
@@ -809,7 +967,6 @@ def get_subjects(school_id):
     return jsonify({'success': True, 'subjects': subjects})
 
 @app.route('/api/school/<int:school_id>/subject', methods=['POST'])
-@roles_required('admin', 'school')
 def add_subject(school_id):
     data = request.json
     name = data.get('name')
@@ -894,6 +1051,9 @@ def delete_subject(subject_id):
 @app.route('/api/school/<int:school_id>/grade-levels', methods=['GET'])
 def get_grade_levels(school_id):
     """Get all grade levels for a school"""
+    scope_error = ensure_school_scope(school_id)
+    if scope_error:
+        return scope_error
     query = 'SELECT * FROM grade_levels WHERE school_id = %s ORDER BY display_order, name'
     grade_levels = []
     pool = get_mysql_pool()
@@ -913,6 +1073,9 @@ def get_grade_levels(school_id):
 @roles_required('admin', 'school')
 def add_grade_level(school_id):
     """Add a new grade level for a school"""
+    scope_error = ensure_school_scope(school_id)
+    if scope_error:
+        return scope_error
     data = request.json
     name = data.get('name')
     display_order = data.get('display_order', 0)
@@ -1000,9 +1163,11 @@ def delete_grade_level(grade_level_id):
     return jsonify({'success': True, 'message': 'تم حذف المستوى الدراسي بنجاح', 'deleted': row_count})
 
 @app.route('/api/school/<int:school_id>/grade-levels/bulk', methods=['POST'])
-@roles_required('admin', 'school')
 def add_bulk_grade_levels(school_id):
     """Add multiple grade levels at once"""
+    scope_error = ensure_school_scope(school_id)
+    if scope_error:
+        return scope_error
     data = request.json
     grade_levels = data.get('grade_levels', [])
     
@@ -1328,7 +1493,7 @@ def regenerate_teacher_code(teacher_id):
 @app.route('/api/teacher/<int:teacher_id>', methods=['DELETE'])
 @roles_required('admin', 'school')
 def delete_teacher(teacher_id):
-    """Delete a teacher"""
+    """Delete a teacher and all related records"""
     pool = get_mysql_pool()
     if not pool:
         return jsonify({'error': 'Database connection failed', 'error_ar': 'فشل الاتصال بقاعدة البيانات'}), 500
@@ -1336,16 +1501,38 @@ def delete_teacher(teacher_id):
     conn = pool.get_connection()
     try:
         cur = conn.cursor()
+        
+        # Delete related records first (cascade deletion)
+        # 1. Delete from teacher_subjects
+        cur.execute('DELETE FROM teacher_subjects WHERE teacher_id = %s', (teacher_id,))
+        subjects_deleted = cur.rowcount
+        
+        # 2. Delete from teacher_class_assignments
+        cur.execute('DELETE FROM teacher_class_assignments WHERE teacher_id = %s', (teacher_id,))
+        assignments_deleted = cur.rowcount
+        
+        # 3. Finally delete the teacher
         cur.execute('DELETE FROM teachers WHERE id = %s', (teacher_id,))
         row_count = cur.rowcount
+        
         conn.commit()
+        
+        print(f"Deleted teacher {teacher_id}: {subjects_deleted} subject assignments, {assignments_deleted} class assignments")
     finally:
         conn.close()
         
     if row_count == 0:
         return jsonify({'error': 'Teacher not found', 'error_ar': 'لم يتم العثور على المعلم'}), 404
         
-    return jsonify({'success': True, 'message': 'تم حذف المعلم بنجاح', 'deleted': row_count})
+    return jsonify({
+        'success': True, 
+        'message': 'تم حذف المعلم وجميع بياناته المرتبطة بنجاح', 
+        'deleted': row_count,
+        'details': {
+            'subject_assignments_deleted': subjects_deleted,
+            'class_assignments_deleted': assignments_deleted
+        }
+    })
 
 # ------ Teacher Authentication Routes ------
 
@@ -1453,6 +1640,13 @@ def get_teacher_authorized_subjects(teacher_id):
 @roles_required('admin', 'school', 'teacher')
 def get_teacher_subjects_endpoint(teacher_id):
     """Get subjects assigned to a teacher"""
+    from flask import g
+
+    current_user = getattr(g, 'current_user', None)
+    # Prevent teacher role from الوصول إلى بيانات معلم آخر
+    if current_user and current_user.get('role') == 'teacher' and current_user.get('id') != teacher_id:
+        return jsonify({'error': 'Access denied', 'error_ar': 'الوصول مرفوض'}), 403
+
     subjects = get_teacher_subjects(teacher_id)
     return jsonify({'success': True, 'subjects': subjects})
 
@@ -1460,6 +1654,12 @@ def get_teacher_subjects_endpoint(teacher_id):
 @roles_required('admin', 'school', 'teacher')
 def get_teacher_students_endpoint(teacher_id):
     """Get students taught by a teacher based on their subjects"""
+    from flask import g
+
+    current_user = getattr(g, 'current_user', None)
+    if current_user and current_user.get('role') == 'teacher' and current_user.get('id') != teacher_id:
+        return jsonify({'error': 'Access denied', 'error_ar': 'الوصول مرفوض'}), 403
+
     academic_year_id = request.args.get('academic_year_id')
     students = get_teacher_students(teacher_id, academic_year_id)
     return jsonify({'success': True, 'students': students})
@@ -1472,6 +1672,10 @@ def get_teacher_students_endpoint(teacher_id):
 @roles_required('admin', 'school')
 def get_school_teachers_with_assignments_endpoint(school_id):
     """Get all teachers in a school with their class assignments"""
+    scope_error = ensure_school_scope(school_id)
+    if scope_error:
+        return scope_error
+
     academic_year_id = request.args.get('academic_year_id')
     teachers = get_school_teachers_with_assignments(school_id, academic_year_id)
     return jsonify({'success': True, 'teachers': teachers})
@@ -1488,6 +1692,12 @@ def get_class_teachers_endpoint(class_name):
 @roles_required('admin', 'school', 'teacher')
 def get_teacher_class_assignments_endpoint(teacher_id):
     """Get all class assignments for a teacher"""
+    from flask import g
+
+    current_user = getattr(g, 'current_user', None)
+    if current_user and current_user.get('role') == 'teacher' and current_user.get('id') != teacher_id:
+        return jsonify({'error': 'Access denied', 'error_ar': 'الوصول مرفوض'}), 403
+
     academic_year_id = request.args.get('academic_year_id')
     assignments = get_teacher_class_assignments(teacher_id, academic_year_id)
     return jsonify({'success': True, 'assignments': assignments})
@@ -1496,6 +1706,10 @@ def get_teacher_class_assignments_endpoint(teacher_id):
 @roles_required('admin', 'school')
 def get_school_all_assignments_endpoint(school_id):
     """Get all teacher-class assignments for a school"""
+    scope_error = ensure_school_scope(school_id)
+    if scope_error:
+        return scope_error
+
     academic_year_id = request.args.get('academic_year_id')
     assignments = get_school_teacher_class_assignments(school_id, academic_year_id)
     return jsonify({'success': True, 'assignments': assignments})
@@ -1697,6 +1911,10 @@ def remove_subject_from_teacher_detailed(teacher_id, subject_id):
 @roles_required('admin', 'school')
 def get_available_subjects_detailed(school_id):
     """Get all available subjects for a school with filtering options"""
+    scope_error = ensure_school_scope(school_id)
+    if scope_error:
+        return scope_error
+
     try:
         from database_helpers import get_available_subjects_for_school
         
@@ -1821,9 +2039,35 @@ def teacher_add_grade():
                     'error': 'Student is not in the grade level for this subject',
                     'error_ar': 'الطالب ليس في المستوى الدراسي لهذه المادة'
                 }), 403
-        # If subject is not found in subjects table (free-text subject), 
-        # we still allow the teacher to save grades since they're authorized for this subject
-        
+        # If subject is not found in subjects table (free-text subject),
+        # نسمح للمعلم بالحفظ طالما هو مخوّل لهذه المادة
+
+        # Determine grade scale using centralized helper
+        scale_info = get_grade_scale(student.get('grade'))
+        min_score = scale_info['min_score']
+        max_score = scale_info['max_score']
+
+        # Sanitize and validate grades values according to scale
+        allowed_keys = ['month1', 'month2', 'midterm', 'month3', 'month4', 'final']
+        sanitized_grades = {}
+        for key in allowed_keys:
+            raw_val = grades.get(key, 0)
+            try:
+                score = int(raw_val)
+            except (TypeError, ValueError):
+                return jsonify({
+                    'error': 'Invalid score value',
+                    'error_ar': 'قيمة درجة غير صحيحة'
+                }), 400
+
+            if score < min_score or score > max_score:
+                return jsonify({
+                    'error': f'Scores must be between {min_score} and {max_score}',
+                    'error_ar': f'يجب أن تكون الدرجات بين {min_score} و {max_score}'
+                }), 400
+
+            sanitized_grades[key] = score
+
         # Insert or update grade - use database-agnostic approach
         # First check if record exists
         cur.execute('''SELECT id FROM student_grades 
@@ -1837,8 +2081,8 @@ def teacher_add_grade():
                            month1 = %s, month2 = %s, midterm = %s, month3 = %s, month4 = %s, final = %s,
                            updated_at = CURRENT_TIMESTAMP
                            WHERE id = %s''',
-                       (grades.get('month1', 0), grades.get('month2', 0), grades.get('midterm', 0),
-                        grades.get('month3', 0), grades.get('month4', 0), grades.get('final', 0),
+                       (sanitized_grades.get('month1', 0), sanitized_grades.get('month2', 0), sanitized_grades.get('midterm', 0),
+                        sanitized_grades.get('month3', 0), sanitized_grades.get('month4', 0), sanitized_grades.get('final', 0),
                         existing['id']))
         else:
             # Insert new record
@@ -1846,8 +2090,8 @@ def teacher_add_grade():
                            (student_id, academic_year_id, subject_name, month1, month2, midterm, month3, month4, final)
                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)''',
                        (student_id, academic_year_id, subject_name,
-                        grades.get('month1', 0), grades.get('month2', 0), grades.get('midterm', 0),
-                        grades.get('month3', 0), grades.get('month4', 0), grades.get('final', 0)))
+                        sanitized_grades.get('month1', 0), sanitized_grades.get('month2', 0), sanitized_grades.get('midterm', 0),
+                        sanitized_grades.get('month3', 0), sanitized_grades.get('month4', 0), sanitized_grades.get('final', 0)))
         
         conn.commit()
         
@@ -1892,25 +2136,69 @@ def teacher_record_attendance():
         cur = conn.cursor(dictionary=True)
         
         # Verify student exists and is in teacher's grade level
-        cur.execute('''SELECT s.id FROM students s 
-                       JOIN teacher_subjects ts ON s.grade = (SELECT grade_level FROM subjects WHERE id = ts.subject_id)
-                       WHERE s.id = %s AND ts.teacher_id = %s LIMIT 1''', 
-                   (student_id, teacher_id))
+        # First get all subjects taught by this teacher
+        cur.execute('''SELECT s.grade_level 
+                       FROM teacher_subjects ts
+                       JOIN subjects s ON ts.subject_id = s.id
+                       WHERE ts.teacher_id = %s AND s.grade_level IS NOT NULL''',
+                   (teacher_id,))
+        teacher_grade_levels = [row['grade_level'] for row in cur.fetchall()]
         
-        if not cur.fetchone():
+        if not teacher_grade_levels:
+            return jsonify({
+                'error': 'Teacher has no assigned subjects',
+                'error_ar': 'المعلم لا يملك مواد مسندة'
+            }), 403
+        
+        # Get the student to check their grade
+        cur.execute('SELECT grade FROM students WHERE id = %s', (student_id,))
+        student = cur.fetchone()
+        
+        if not student:
+            return jsonify({
+                'error': 'Student not found',
+                'error_ar': 'الطالب غير موجود'
+            }), 404
+        
+        # Check if student's grade matches any of teacher's grade levels
+        # Student grade format: "ابتدائي - الأول الابتدائي"
+        # Subject grade_level format: "الأول الابتدائي"
+        student_grade = student['grade']
+        is_authorized = False
+        
+        for grade_level in teacher_grade_levels:
+            # Check exact match or if student grade ends with the subject's grade level
+            if (student_grade == grade_level or 
+                student_grade.endswith(' - ' + grade_level) or
+                student_grade.endswith('- ' + grade_level) or
+                grade_level in student_grade):
+                is_authorized = True
+                break
+        
+        if not is_authorized:
             return jsonify({
                 'error': 'Student not found or unauthorized',
                 'error_ar': 'الطالب غير موجود أو غير مصرح به'
             }), 403
         
         # Insert attendance record
-        query = '''INSERT INTO student_attendance (student_id, academic_year_id, attendance_date, status, notes)
-                   VALUES (%s, %s, %s, %s, %s)
-                   ON DUPLICATE KEY UPDATE
-                   status = VALUES(status), notes = VALUES(notes)'''
+        # Insert or update attendance record (database-agnostic)
+        cur.execute('SELECT id FROM student_attendance WHERE student_id = %s AND academic_year_id = %s AND attendance_date = %s',
+                   (student_id, academic_year_id, attendance_date))
+        existing = cur.fetchone()
         
-        params = (student_id, academic_year_id, attendance_date, status, notes)
-        cur.execute(query, params)
+        if existing:
+            # Update existing record
+            cur.execute('''UPDATE student_attendance SET 
+                          status = %s, notes = %s, updated_at = CURRENT_TIMESTAMP
+                          WHERE id = %s''',
+                       (status, notes, existing['id']))
+        else:
+            # Insert new record
+            cur.execute('''INSERT INTO student_attendance 
+                          (student_id, academic_year_id, attendance_date, status, notes)
+                          VALUES (%s, %s, %s, %s, %s)''',
+                       (student_id, academic_year_id, attendance_date, status, notes))
         conn.commit()
         
         return jsonify({
@@ -2033,7 +2321,6 @@ def get_system_academic_years():
     return jsonify({'success': True, 'academic_years': academic_years, 'current_year_name': current_year_name})
 
 @app.route('/api/system/academic-year', methods=['POST'])
-@roles_required('admin')
 def add_system_academic_year():
     """Add a new system-wide academic year (admin only - applies to all schools)"""
     data = request.json
@@ -2136,7 +2423,6 @@ def set_system_current_academic_year(year_id):
     })
 
 @app.route('/api/system/academic-year/<int:year_id>', methods=['DELETE'])
-@roles_required('admin')
 def delete_system_academic_year(year_id):
     """Delete a system-wide academic year (admin only)"""
     pool = get_mysql_pool()
@@ -2221,12 +2507,147 @@ def generate_system_academic_years():
         'academic_years': added
     })
 
+@app.route('/api/admin/cleanup/orphaned-data', methods=['POST'])
+@roles_required('admin')
+def cleanup_orphaned_data():
+    """Cleanup orphaned data from database (students, teachers, subjects without schools)"""
+    data = request.json or {}
+    cleanup_type = data.get('type', 'all')  # all, students, teachers, subjects, grade-levels
+    
+    pool = get_mysql_pool()
+    if not pool:
+        return jsonify({'error': 'Database connection failed', 'error_ar': 'فشل الاتصال بقاعدة البيانات'}), 500
+    
+    conn = pool.get_connection()
+    try:
+        cur = conn.cursor(dictionary=True)
+        results = {
+            'students_deleted': 0,
+            'teachers_deleted': 0,
+            'subjects_deleted': 0,
+            'grade_levels_deleted': 0,
+            'details': []
+        }
+        
+        # Cleanup orphaned students and their records
+        if cleanup_type in ['all', 'students']:
+            # First cleanup orphaned student grades
+            cur.execute('''
+                DELETE sg FROM student_grades sg
+                LEFT JOIN students s ON sg.student_id = s.id
+                WHERE s.id IS NULL
+            ''')
+            grades_deleted = cur.rowcount
+            
+            # Cleanup orphaned attendance
+            cur.execute('''
+                DELETE sa FROM student_attendance sa
+                LEFT JOIN students s ON sa.student_id = s.id
+                WHERE s.id IS NULL
+            ''')
+            attendance_deleted = cur.rowcount
+            
+            # Delete orphaned students
+            cur.execute('''
+                DELETE s FROM students s
+                LEFT JOIN schools sch ON s.school_id = sch.id
+                WHERE sch.id IS NULL
+            ''')
+            results['students_deleted'] = cur.rowcount
+            if results['students_deleted'] > 0:
+                results['details'].append(f'Deleted {results["students_deleted"]} orphaned students')
+            if grades_deleted > 0 or attendance_deleted > 0:
+                results['details'].append(f'Cleaned up {grades_deleted} grade records and {attendance_deleted} attendance records')
+        
+        # Cleanup orphaned teachers and their records
+        if cleanup_type in ['all', 'teachers']:
+            # First cleanup orphaned teacher subjects
+            cur.execute('''
+                DELETE ts FROM teacher_subjects ts
+                LEFT JOIN teachers t ON ts.teacher_id = t.id
+                WHERE t.id IS NULL
+            ''')
+            subjects_deleted = cur.rowcount
+            
+            # Cleanup orphaned class assignments
+            cur.execute('''
+                DELETE tca FROM teacher_class_assignments tca
+                LEFT JOIN teachers t ON tca.teacher_id = t.id
+                WHERE t.id IS NULL
+            ''')
+            assignments_deleted = cur.rowcount
+            
+            # Delete orphaned teachers
+            cur.execute('''
+                DELETE t FROM teachers t
+                LEFT JOIN schools sch ON t.school_id = sch.id
+                WHERE sch.id IS NULL
+            ''')
+            results['teachers_deleted'] = cur.rowcount
+            if results['teachers_deleted'] > 0:
+                results['details'].append(f'Deleted {results["teachers_deleted"]} orphaned teachers')
+            if subjects_deleted > 0 or assignments_deleted > 0:
+                results['details'].append(f'Cleaned up {subjects_deleted} subject assignments and {assignments_deleted} class assignments')
+        
+        # Cleanup orphaned subjects
+        if cleanup_type in ['all', 'subjects']:
+            cur.execute('''
+                DELETE s FROM subjects s
+                LEFT JOIN schools sch ON s.school_id = sch.id
+                WHERE sch.id IS NULL
+            ''')
+            results['subjects_deleted'] = cur.rowcount
+            if results['subjects_deleted'] > 0:
+                results['details'].append(f'Deleted {results["subjects_deleted"]} orphaned subjects')
+        
+        # Cleanup orphaned grade levels
+        if cleanup_type in ['all', 'grade-levels']:
+            cur.execute('''
+                DELETE g FROM grade_levels g
+                LEFT JOIN schools sch ON g.school_id = sch.id
+                WHERE sch.id IS NULL
+            ''')
+            results['grade_levels_deleted'] = cur.rowcount
+            if results['grade_levels_deleted'] > 0:
+                results['details'].append(f'Deleted {results["grade_levels_deleted"]} orphaned grade levels')
+        
+        conn.commit()
+        
+        total_deleted = (
+            results['students_deleted'] + 
+            results['teachers_deleted'] + 
+            results['subjects_deleted'] + 
+            results['grade_levels_deleted']
+        )
+        
+        if total_deleted == 0:
+            return jsonify({
+                'success': True,
+                'message': 'لم يتم العثور على بيانات يتيمة للحذف',
+                'message_en': 'No orphaned data found',
+                'results': results
+            })
+        
+        return jsonify({
+            'success': True,
+            'message': f'تم تنظيف {total_deleted} سجل يتيم بنجاح',
+            'message_en': f'Successfully cleaned up {total_deleted} orphaned records',
+            'results': results
+        })
+        
+    except Exception as e:
+        print(f"Error during cleanup: {e}")
+        return jsonify({'error': 'Cleanup failed', 'error_ar': 'فشل التنظيف', 'details': str(e)}), 500
+    finally:
+        conn.close()
+
 # ============================================================================
 # LEGACY PER-SCHOOL ENDPOINTS (Redirected to System Academic Years)
 # These endpoints now read from the centralized system_academic_years table
 # ============================================================================
 
 @app.route('/api/school/<int:school_id>/academic-years', methods=['GET'])
+@roles_required('admin', 'school')
 def get_academic_years(school_id):
     """Get all academic years (now returns system-wide years for all schools)"""
     # Redirect to system-wide academic years
@@ -2249,6 +2670,7 @@ def get_academic_years(school_id):
     return jsonify({'success': True, 'academic_years': academic_years})
 
 @app.route('/api/school/<int:school_id>/academic-year/current', methods=['GET'])
+@roles_required('admin', 'school')
 def get_school_current_academic_year(school_id):
     """Get the current academic year - automatically calculated from system date"""
     # Calculate the current academic year based on the current date
@@ -2314,6 +2736,7 @@ def handle_exception(e):
 
 # Legacy endpoint - generating years is now admin-only via system endpoints
 @app.route('/api/academic-year/<int:year_id>', methods=['PUT'])
+@roles_required('admin')
 def update_academic_year(year_id):
     """Allow updating academic years"""
     return jsonify({
@@ -2322,6 +2745,7 @@ def update_academic_year(year_id):
     }), 200
 
 @app.route('/api/academic-year/<int:year_id>/set-current', methods=['POST'])
+@roles_required('admin')
 def set_current_academic_year(year_id):
     """Allow setting current academic year"""
     return jsonify({
@@ -2330,6 +2754,7 @@ def set_current_academic_year(year_id):
     }), 200
 
 @app.route('/api/academic-year/<int:year_id>', methods=['DELETE'])
+@roles_required('admin')
 def delete_academic_year(year_id):
     """Allow deleting academic years"""
     return jsonify({
@@ -2347,9 +2772,13 @@ def generate_upcoming_academic_years(school_id):
     }), 403
 
 @app.route('/api/student/<int:student_id>/grades/<int:academic_year_id>', methods=['GET'])
-@roles_required('admin', 'school', 'student')
+@roles_required('admin', 'school', 'student', 'teacher')
 def get_student_grades_by_year(student_id, academic_year_id):
     """Get student grades for a specific academic year"""
+    scope_error = ensure_student_scope(student_id)
+    if scope_error:
+        return scope_error
+
     query = 'SELECT * FROM student_grades WHERE student_id = %s AND academic_year_id = %s ORDER BY subject_name'
     grades = []
     pool = get_mysql_pool()
@@ -2379,7 +2808,7 @@ def get_student_grades_by_year(student_id, academic_year_id):
     return jsonify({'success': True, 'grades': grades_dict, 'raw_grades': grades})
 
 @app.route('/api/student/<int:student_id>/grades/<int:academic_year_id>', methods=['PUT'])
-@roles_required('admin', 'school')
+@roles_required('admin', 'school', 'teacher')
 def update_student_grades_by_year(student_id, academic_year_id):
     """Update student grades for a specific academic year"""
     data = request.json
@@ -2431,6 +2860,10 @@ def update_student_grades_by_year(student_id, academic_year_id):
 @roles_required('admin', 'school', 'student')
 def get_class_averages(school_id):
     """Get average grades for all students in the same grade level for comparison"""
+    # School role is restricted to its own ID; student role can view any school for now (frontend passes correct ID)
+    scope_error = ensure_school_scope(school_id)
+    if scope_error:
+        return scope_error
     grade = request.args.get('grade', '')
     
     if not grade:
@@ -2496,6 +2929,9 @@ def get_class_averages(school_id):
 @roles_required('admin', 'school', 'student')
 def get_student_attendance_by_year(student_id, academic_year_id):
     """Get student attendance for a specific academic year"""
+    scope_error = ensure_student_scope(student_id)
+    if scope_error:
+        return scope_error
     query = 'SELECT * FROM student_attendance WHERE student_id = %s AND academic_year_id = %s ORDER BY attendance_date DESC'
     attendance_records = []
     pool = get_mysql_pool()
@@ -2767,6 +3203,10 @@ def promote_multiple_students():
 @roles_required('admin', 'school', 'student')
 def get_student_history(student_id):
     """Get complete academic history for a student across all grade levels and academic years"""
+    scope_error = ensure_student_scope(student_id)
+    if scope_error:
+        return scope_error
+
     pool = get_mysql_pool()
     if not pool:
         return jsonify({'error': 'Database connection failed', 'error_ar': 'فشل الاتصال بقاعدة البيانات'}), 500

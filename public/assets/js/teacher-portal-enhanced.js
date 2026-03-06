@@ -328,7 +328,6 @@ function renderTeacherStudents() {
                                     <div class="student-info">
                                         <h4>${getDisplayName(student.full_name)}</h4>
                                         <div class="student-details">
-                                            <span class="student-code" title="رمز الطالب">${student.student_code}</span>
                                             <span class="student-room" title="الفصل">${student.room || '-'}</span>
                                         </div>
                                     </div>
@@ -483,10 +482,6 @@ function showStudentDetailsModal(student) {
                     <span>${student.full_name}</span>
                 </div>
                 <div class="detail-row">
-                    <strong>الرمز:</strong>
-                    <span>${student.student_code}</span>
-                </div>
-                <div class="detail-row">
                     <strong>الصف:</strong>
                     <span>${student.grade}</span>
                 </div>
@@ -525,7 +520,6 @@ function showStudentsListModal(students, gradeLevel) {
                         <thead>
                             <tr>
                                 <th>الاسم</th>
-                                <th>الرمز</th>
                                 <th>الفصل</th>
                                 <th>الإجراءات</th>
                             </tr>
@@ -534,7 +528,6 @@ function showStudentsListModal(students, gradeLevel) {
                             ${uniqueStudents.map(student => `
                                 <tr>
                                     <td>${student.full_name}</td>
-                                    <td>${student.student_code}</td>
                                     <td>${student.room || '-'}</td>
                                     <td>
                                         <button class="btn-small btn-info" onclick="viewStudentDetails(${student.id})">

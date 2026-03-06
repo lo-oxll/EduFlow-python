@@ -73,54 +73,6 @@ function copyToClipboard(text) {
     });
 }
 
-// Teacher Login
-document.getElementById('teacherLoginForm')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const teacherCode = document.getElementById('teacherCode').value.trim();
-    
-    if (!teacherCode) {
-        showNotification('يرجى إدخال رمز المعلم', 'error');
-        return;
-    }
-    
-    try {
-        const response = await fetch('/api/teacher/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ teacher_code: teacherCode })
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-            // Store teacher data and token
-            currentTeacher = result.teacher;
-            window.currentTeacher = result.teacher; // Expose globally
-            localStorage.setItem('teacher_token', result.token);
-            localStorage.setItem('teacher', JSON.stringify(currentTeacher));
-            
-            console.log('Teacher login successful:', currentTeacher);
-            
-            showNotification('تم تسجيل الدخول بنجاح!', 'success');
-            
-            // Hide login screen and show portal
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('portalScreen').style.display = 'block';
-            
-            // Initialize portal
-            initializePortal();
-        } else {
-            showNotification(result.error_ar || result.error || 'رمز المعلم غير صحيح', 'error');
-        }
-    } catch (error) {
-        console.error('Login error:', error);
-        showNotification('حدث خطأ في الاتصال بالخادم', 'error');
-    }
-});
-
 // Initialize Portal with enhanced teacher information display
 async function initializePortal() {
     if (!currentTeacher) {
@@ -583,10 +535,51 @@ async function openGradesModal(subjectId, subjectName, gradeLevel) {
 
 // Load subject grades
 async function loadSubjectGrades(subjectId, subjectName, gradeLevel) {
-    // This would typically fetch from the database
-    // For now, we'll initialize with empty grades
+    if (!currentAcademicYear) {
+        await loadCurrentAcademicYear();
+    }
+    if (!currentAcademicYear) {
+        console.warn('No academic year available for loading grades');
+        return;
+    }
+    
+    // Initialize the subject grades cache
     if (!currentSubjectGrades[subjectName]) {
         currentSubjectGrades[subjectName] = {};
+    }
+    
+    // Get students for this grade level
+    const students = window.teacherStudents || teacherStudents || [];
+    const uniqueStudents = deduplicateStudents(students);
+    const subjectStudents = uniqueStudents.filter(student => {
+        return student.grade === gradeLevel || 
+               student.grade.endsWith(' - ' + gradeLevel) ||
+               student.grade.includes(gradeLevel);
+    });
+    
+    // Fetch grades for each student from the database
+    for (const student of subjectStudents) {
+        try {
+            const response = await fetch(`/api/student/${student.id}/grades/${currentAcademicYear.id}`, {
+                headers: getAuthHeaders()
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.grades && result.grades[subjectName]) {
+                    currentSubjectGrades[subjectName][student.id] = result.grades[subjectName];
+                } else {
+                    // No grades found for this student/subject, initialize with zeros
+                    if (!currentSubjectGrades[subjectName][student.id]) {
+                        currentSubjectGrades[subjectName][student.id] = {
+                            month1: 0, month2: 0, midterm: 0, month3: 0, month4: 0, final: 0
+                        };
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Error loading grades for student ${student.id}:`, error);
+        }
     }
 }
 
@@ -717,16 +710,72 @@ async function saveStudentGrades(studentId, subjectName) {
 
 // Save all grades
 async function saveAllGrades() {
-    // This would save all grades at once
-    // For now, we'll just show a notification
+    if (!currentAcademicYear || !currentTeacher) {
+        showNotification('يرجى التأكد من تسجيل الدخول وتحديد السنة الدراسية', 'error');
+        return;
+    }
+    
+    // Get the current subject name from the modal header
+    const subjectName = document.getElementById('gradesSubjectName')?.textContent;
+    if (!subjectName || !currentSubjectGrades[subjectName]) {
+        showNotification('لا توجد درجات للحفظ', 'error');
+        return;
+    }
+    
+    const studentGrades = currentSubjectGrades[subjectName];
+    const studentIds = Object.keys(studentGrades);
+    
+    if (studentIds.length === 0) {
+        showNotification('لا توجد درجات للحفظ', 'error');
+        return;
+    }
+    
     showNotification('جارٍ حفظ جميع الدرجات...', 'info');
     
-    // In a real implementation, you would iterate through all students and grades
-    // and make API calls to save them
+    let successCount = 0;
+    let errorCount = 0;
     
-    setTimeout(() => {
-        showNotification('تم حفظ جميع الدرجات بنجاح', 'success');
-    }, 1000);
+    for (const studentId of studentIds) {
+        const grades = studentGrades[studentId];
+        // Only save if at least one grade is non-zero
+        const hasGrades = Object.values(grades).some(g => parseInt(g) > 0);
+        if (!hasGrades) continue;
+        
+        try {
+            const response = await fetch('/api/teacher/grades', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    student_id: parseInt(studentId),
+                    subject_name: subjectName,
+                    academic_year_id: currentAcademicYear.id,
+                    grades: grades
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                successCount++;
+            } else {
+                errorCount++;
+                console.error(`Error saving grades for student ${studentId}:`, result.error_ar || result.error);
+            }
+        } catch (error) {
+            errorCount++;
+            console.error(`Error saving grades for student ${studentId}:`, error);
+        }
+    }
+    
+    if (errorCount === 0 && successCount > 0) {
+        showNotification(`تم حفظ درجات ${successCount} طالب بنجاح`, 'success');
+    } else if (successCount > 0) {
+        showNotification(`تم حفظ ${successCount} وفشل ${errorCount}`, 'warning');
+    } else if (errorCount > 0) {
+        showNotification('فشل في حفظ الدرجات', 'error');
+    } else {
+        showNotification('لا توجد درجات جديدة للحفظ', 'info');
+    }
 }
 
 // Open Attendance Modal

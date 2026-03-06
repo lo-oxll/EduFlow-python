@@ -2306,13 +2306,16 @@ function filterTeachers(gradeLevel) {
                     </div>
                 </td>
                 <td class="td-school">
-                    <button class="btn-small btn-info" onclick="editTeacherModal(${teacher.id})" style="margin: 0.1rem;">
+                    <button class="btn-small btn-info" onclick="editTeacherModal(${teacher.id})" style="margin: 0.1rem; display: flex; align-items: center; gap: 0.3rem;" title="🔵 تعديل - لتحرير بيانات المعلم">
+                        <span style="color: #007bff; font-size: 1.2rem;">🔵</span>
                         <i class="fas fa-edit"></i> تعديل
                     </button>
-                    <button class="btn-small btn-warning" onclick="regenerateTeacherCode(${teacher.id})" style="margin: 0.1rem;">
+                    <button class="btn-small btn-warning" onclick="regenerateTeacherCode(${teacher.id})" style="margin: 0.1rem; display: flex; align-items: center; gap: 0.3rem;" title="🟡 تجديد - لإعادة توليد رمز المعلم">
+                        <span style="color: #ffc107; font-size: 1.2rem;">🟡</span>
                         <i class="fas fa-sync"></i> تجديد الرمز
                     </button>
-                    <button class="btn-small btn-danger" onclick="deleteTeacher(${teacher.id})" style="margin: 0.1rem;">
+                    <button class="btn-small btn-danger" onclick="deleteTeacher(${teacher.id})" style="margin: 0.1rem; display: flex; align-items: center; gap: 0.3rem;" title="🔴 حذف - لحذف المعلم من النظام">
+                        <span style="color: #dc3545; font-size: 1.2rem;">🔴</span>
                         <i class="fas fa-trash"></i> حذف
                     </button>
                 </td>
@@ -2399,15 +2402,20 @@ function loadTeachersTable(gradeLevel) {
                 </td>
                 <td class="td-school">${teacher.phone || '-'}</td>
                 <td class="td-school">
-                    <button class="btn-small btn-info" onclick="editTeacherModal(${teacher.id})" style="margin: 0.1rem;">
-                        <i class="fas fa-edit"></i> تعديل
-                    </button>
-                    <button class="btn-small btn-warning" onclick="regenerateTeacherCode(${teacher.id})" style="margin: 0.1rem;">
-                        <i class="fas fa-sync"></i> تجديد الرمز
-                    </button>
-                    <button class="btn-small btn-danger" onclick="deleteTeacher(${teacher.id})" style="margin: 0.1rem;">
-                        <i class="fas fa-trash"></i> حذف
-                    </button>
+                    <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
+                        <button class="btn-small btn-info" onclick="editTeacherModal(${teacher.id})" style="margin: 0.1rem; display: flex; align-items: center; gap: 0.3rem;" title="🔵 تعديل - لتحرير بيانات المعلم">
+                            <span style="color: #007bff; font-size: 1.2rem;">🔵</span>
+                            <i class="fas fa-edit"></i> تعديل
+                        </button>
+                        <button class="btn-small btn-warning" onclick="regenerateTeacherCode(${teacher.id})" style="margin: 0.1rem; display: flex; align-items: center; gap: 0.3rem;" title="🟡 تجديد - لإعادة توليد رمز المعلم">
+                            <span style="color: #ffc107; font-size: 1.2rem;">🟡</span>
+                            <i class="fas fa-sync"></i> تجديد
+                        </button>
+                        <button class="btn-small btn-danger" onclick="deleteTeacher(${teacher.id})" style="margin: 0.1rem; display: flex; align-items: center; gap: 0.3rem;" title="🔴 حذف - لحذف المعلم من النظام">
+                            <span style="color: #dc3545; font-size: 1.2rem;">🔴</span>
+                            <i class="fas fa-trash"></i> حذف
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -2590,6 +2598,7 @@ async function editTeacherModal(teacherId) {
 // Add teacher management functions to window object
 window.showAddTeacherModal = showAddTeacherModal;
 window.showTeachersList = showTeachersList;
+window.editTeacherModal = editTeacherModal;
 
 // إدارة المستويات الدراسية
 
@@ -2628,6 +2637,16 @@ function calculateBranchSuccessRate(studentsInBranch) {
 
 // إدارة المواد
 function showSubjectManagementModal() {
+    // إغلاق النوافذ الأخرى أولاً
+    closeModal('gradesModal');
+    closeTeacherAssignmentModal();
+    if (document.getElementById('addTeacherModal')) {
+        closeModal('addTeacherModal');
+    }
+    if (document.getElementById('addGradeLevelModal')) {
+        closeModal('addGradeLevelModal');
+    }
+    
     const modal = document.getElementById('subjectManagementModal');
     if (modal) {
         modal.style.display = 'flex';
@@ -2648,7 +2667,7 @@ function populateSubjectGradeLevelOptions() {
     const gradeLevelFilterSelect = document.getElementById('gradeLevelFilter');
     
     if (subjectGradeLevelSelect) {
-        subjectGradeLevelSelect.innerHTML = '<option value="">غير محدد (مادة عامة)</option>';
+        subjectGradeLevelSelect.innerHTML = '<option value="">غير محدد</option>';
         gradeLevels.forEach(grade => {
             const option = document.createElement('option');
             option.value = grade;
@@ -2724,6 +2743,11 @@ async function addSubject(e) {
     
     if (!subjectName) {
         showNotification('يرجى إدخال اسم المادة', 'error');
+        return;
+    }
+    
+    if (!gradeLevel) {
+        showNotification('يجب تحديد مستوى دراسي', 'error');
         return;
     }
     
@@ -4420,18 +4444,14 @@ function closeModal(modalId) {
 }
 
 function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showNotification(`تم نسخ الرمز: ${text}`, 'info');
-    }).catch(() => {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showNotification(`تم نسخ الرمز: ${text}`, 'info');
-    });
+    // Always use fallback for compatibility
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    showNotification(`تم نسخ الرمز: ${text}`, 'info');
 }
 
 function editStudent(id) {

@@ -1,7 +1,7 @@
 version: "1"
 services:
   - type: web
-    name: sajjaly-pro
+    name: eduflow
     env: python
     plan: free
     region: frankfurt  # or oregon for better performance
@@ -15,7 +15,7 @@ services:
       - key: PORT
         fromService:
           type: web
-          name: sajjaly-pro
+          name: eduflow
           property: port
       - key: DATABASE_URL
         sync: false  # Set manually in Render dashboard
@@ -26,7 +26,7 @@ services:
       - key: TZ
         value: "Asia/Baghdad"
     disk:
-      name: sajjaly-data
+      name: eduflow-data
       mountPath: /app/data
       sizeGB: 1
     scaling:

@@ -1,4 +1,4 @@
-# 🚀 Deployment Guide - Sajjaly Pro School Management System
+# 🚀 Deployment Guide - EduFlow School Management System
 
 ## ❌ Why GitHub Pages Doesn't Work
 GitHub Pages only serves static files and cannot run:

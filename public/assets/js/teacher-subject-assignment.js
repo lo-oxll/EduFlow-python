@@ -157,12 +157,12 @@ function renderSubjectAssignmentInterface() {
         console.error('Teachers array not available when rendering interface');
         container.innerHTML = `
             <div class="modal-content" style="max-width: 800px;">
-                <span class="close-modal" onclick="cancelSubjectAssignment()">&times;</span>
+                <span class="close-modal" onclick="closeSubjectAssignmentSilently()">&times;</span>
                 <div class="error-state" style="padding: 2rem; text-align: center;">
                     <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #dc3545; margin-bottom: 1rem;"></i>
                     <h3>خطأ في تحميل البيانات</h3>
                     <p>بيانات المعلمين غير متوفرة. يرجى تحديث الصفحة والمحاولة مرة أخرى.</p>
-                    <button type="button" class="btn-primary-school btn-primary" onclick="cancelSubjectAssignment()" style="margin-top: 1rem;">
+                    <button type="button" class="btn-primary-school btn-primary" onclick="closeSubjectAssignmentSilently()" style="margin-top: 1rem;">
                         <i class="fas fa-times"></i> إغلاق
                     </button>
                 </div>
@@ -176,12 +176,12 @@ function renderSubjectAssignmentInterface() {
         console.error('Teacher not found when rendering interface');
         container.innerHTML = `
             <div class="modal-content" style="max-width: 800px;">
-                <span class="close-modal" onclick="cancelSubjectAssignment()">&times;</span>
+                <span class="close-modal" onclick="closeSubjectAssignmentSilently()">&times;</span>
                 <div class="error-state" style="padding: 2rem; text-align: center;">
                     <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #dc3545; margin-bottom: 1rem;"></i>
                     <h3>المعلم غير موجود</h3>
                     <p>لم يتم العثور على المعلم المحدد. يرجى تحديث الصفحة والمحاولة مرة أخرى.</p>
-                    <button type="button" class="btn-primary-school btn-primary" onclick="cancelSubjectAssignment()" style="margin-top: 1rem;">
+                    <button type="button" class="btn-primary-school btn-primary" onclick="closeSubjectAssignmentSilently()" style="margin-top: 1rem;">
                         <i class="fas fa-times"></i> إغلاق
                     </button>
                 </div>
@@ -191,65 +191,87 @@ function renderSubjectAssignmentInterface() {
     }
     
     const html = `
-        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
-            <span class="close-modal" onclick="cancelSubjectAssignment()">&times;</span>
-            <div class="subject-assignment-header">
-                <h3><i class="fas fa-book"></i> تعيين المواد للمعلم: ${teacher.full_name}</h3>
-                <div class="teacher-info">
-                    <span class="teacher-code">الرمز: ${teacher.teacher_code}</span>
-                    <span class="grade-level">الصف: ${teacher.grade_level || 'غير محدد'}</span>
+        <div class="modal-content" style="width: 100vw; height: 100vh; max-width: none; max-height: none; overflow-y: auto; padding: 2rem;">
+            <div class="subject-assignment-header" style="margin-bottom: 2rem; padding: 1.5rem; background: linear-gradient(135deg, var(--brand-primary-50) 0%, var(--brand-primary-100) 100%); border-radius: 12px; border: 2px solid var(--brand-primary-200);">
+                <h3 style="margin: 0 0 1rem 0; font-size: 2rem; color: var(--brand-primary-700); display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-book" style="font-size: 1.5rem;"></i> تعيين المواد للمعلم: ${teacher.full_name}
+                </h3>
+                <div class="teacher-info" style="display: flex; gap: 2rem; align-items: center;">
+                    <span class="teacher-code" style="background: var(--neutral-100); padding: 0.5rem 1rem; border-radius: 8px; font-family: monospace; font-weight: 600; color: var(--text-secondary); font-size: 1.1rem;">
+                        <i class="fas fa-key" style="margin-left: 0.5rem;"></i> الرمز: ${teacher.teacher_code}
+                    </span>
+                    <span class="grade-level" style="background: var(--warning-100); color: var(--warning-700); padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 1.1rem;">
+                        <i class="fas fa-layer-group" style="margin-left: 0.5rem;"></i> الصف: ${teacher.grade_level || 'غير محدد'}
+                    </span>
                 </div>
             </div>
             
-            <div class="assignment-content">
-                <div class="current-subjects-section">
-                    <h4><i class="fas fa-check-circle"></i> المواد المعينة حالياً (${currentTeacherSubjects.length})</h4>
+            <div class="assignment-content" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; height: calc(100vh - 200px);">
+                <div class="current-subjects-section" style="background: white; border-radius: 12px; border: 1px solid var(--neutral-200); padding: 1.5rem; overflow-y: auto;">
+                    <h4 style="margin: 0 0 1rem 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem;">
+                        <i class="fas fa-check-circle" style="color: var(--success-500);"></i> المواد المعينة حالياً (${currentTeacherSubjects.length})
+                    </h4>
                     ${renderCurrentSubjects()}
                 </div>
                 
-                <div class="subject-assignment-controls">
-                    <div class="search-filter-section">
-                        <div class="form-group">
-                            <label><i class="fas fa-search"></i> البحث في المواد المتاحة</label>
-                            <input type="text" id="subjectSearch" class="form-input" 
-                                   placeholder="ابحث بالاسم أو المستوى..." 
-                                   oninput="filterAvailableSubjects()">
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-filter"></i> تصفية حسب الصف</label>
-                            <select id="gradeLevelFilter" class="form-input" onchange="filterAvailableSubjects()">
-                                <option value="">جميع المستويات</option>
-                                ${getGradeLevelOptions()}
-                            </select>
+                <div class="subject-assignment-controls" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div class="search-filter-section" style="background: white; border-radius: 12px; border: 1px solid var(--neutral-200); padding: 1.5rem;">
+                        <h4 style="margin: 0 0 1rem 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem;">
+                            <i class="fas fa-search" style="color: var(--brand-primary-500);"></i> البحث والتصفية
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+                                    <i class="fas fa-search" style="color: var(--brand-primary-500);"></i> البحث في المواد المتاحة
+                                </label>
+                                <input type="text" id="subjectSearch" class="form-input" 
+                                       placeholder="ابحث بالاسم أو المستوى..." 
+                                       oninput="filterAvailableSubjects()"
+                                       style="width: 100%;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+                                    <i class="fas fa-filter" style="color: var(--brand-primary-500);"></i> تصفية حسب الصف
+                                </label>
+                                <select id="gradeLevelFilter" class="form-input" onchange="filterAvailableSubjects()" style="width: 100%;">
+                                    <option value="">جميع المستويات</option>
+                                    ${getGradeLevelOptions()}
+                                </select>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="available-subjects-section">
-                        <h4><i class="fas fa-plus-circle"></i> المواد المتاحة للتعيين (${availableSubjects.length})</h4>
-                        <div class="subject-selection-actions">
-                            <button type="button" class="btn-secondary-school" onclick="selectAllSubjects()">
-                                <i class="fas fa-check-square"></i> تحديد الكل
-                            </button>
-                            <button type="button" class="btn-secondary-school" onclick="clearAllSubjects()">
-                                <i class="fas fa-square"></i> إلغاء التحديد
-                            </button>
+                    <div class="available-subjects-section" style="background: white; border-radius: 12px; border: 1px solid var(--neutral-200); padding: 1.5rem; flex: 1; overflow-y: auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h4 style="margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem;">
+                                <i class="fas fa-plus-circle" style="color: var(--success-500);"></i> المواد المتاحة للتعيين (${availableSubjects.length})
+                            </h4>
+                            <div class="subject-selection-actions" style="display: flex; gap: 0.5rem;">
+                                <button type="button" class="btn-secondary-school" onclick="selectAllSubjects()" style="padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem;">
+                                    <i class="fas fa-check-square"></i> تحديد الكل
+                                </button>
+                                <button type="button" class="btn-secondary-school" onclick="clearAllSubjects()" style="padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem;">
+                                    <i class="fas fa-square"></i> إلغاء التحديد
+                                </button>
+                            </div>
                         </div>
                         ${renderAvailableSubjects()}
                     </div>
                 </div>
-                
-                <div class="assignment-summary">
-                    <div class="selected-count">
-                        <span id="selectedCount">0</span> مادة محددة للتعيين
-                    </div>
-                    <div class="assignment-actions">
-                        <button type="button" class="btn-secondary-school" onclick="cancelSubjectAssignment()">
-                            <i class="fas fa-times"></i> إلغاء
-                        </button>
-                        <button type="button" class="btn-primary-school btn-primary" onclick="saveSubjectAssignments()" id="saveAssignmentsBtn">
-                            <i class="fas fa-save"></i> حفظ التعيينات
-                        </button>
-                    </div>
+            </div>
+            
+            <div class="assignment-summary" style="position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 2px solid var(--neutral-200); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -4px 20px rgba(0,0,0,0.1);">
+                <div class="selected-count" style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">
+                    <i class="fas fa-check-circle" style="color: var(--success-500); margin-left: 0.5rem;"></i>
+                    <span id="selectedCount">0</span> مادة محددة للتعيين
+                </div>
+                <div class="assignment-actions" style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn-secondary-school" onclick="cancelSubjectAssignment()" style="padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 1rem;">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="btn-primary-school btn-primary" onclick="saveSubjectAssignments()" id="saveAssignmentsBtn" style="padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 1rem; background: linear-gradient(135deg, var(--success-500) 0%, var(--success-600) 100%); border: none;">
+                        <i class="fas fa-save"></i> حفظ التعيينات
+                    </button>
                 </div>
             </div>
         </div>
@@ -541,6 +563,15 @@ async function removeSubjectAssignment(subjectId) {
 function cancelSubjectAssignment() {
     if (confirm('هل أنت متأكد من إلغاء التغييرات؟')) {
         hideSubjectAssignmentInterface();
+        // Reopen the teacher assignment modal
+        const teacherAssignmentModal = document.getElementById('teacherAssignmentModal');
+        if (teacherAssignmentModal) {
+            teacherAssignmentModal.style.display = 'block';
+            // Refresh the teachers list to show updated data
+            if (typeof loadTeachersForAssignment === 'function') {
+                loadTeachersForAssignment();
+            }
+        }
     }
 }
 
@@ -556,6 +587,22 @@ function hideSubjectAssignmentInterface() {
     currentTeacherId = null;
     currentTeacherSubjects = [];
     availableSubjects = [];
+}
+
+/**
+ * Close subject assignment without confirmation (for use with X button)
+ */
+function closeSubjectAssignmentSilently() {
+    hideSubjectAssignmentInterface();
+    // Reopen the teacher assignment modal
+    const teacherAssignmentModal = document.getElementById('teacherAssignmentModal');
+    if (teacherAssignmentModal) {
+        teacherAssignmentModal.style.display = 'block';
+        // Refresh the teachers list to show updated data
+        if (typeof loadTeachersForAssignment === 'function') {
+            loadTeachersForAssignment();
+        }
+    }
 }
 
 /**
@@ -615,6 +662,7 @@ function initializeSubjectAssignment() {
 window.loadTeacherSubjectAssignment = loadTeacherSubjectAssignment;
 window.hideSubjectAssignmentInterface = hideSubjectAssignmentInterface;
 window.initializeSubjectAssignment = initializeSubjectAssignment;
+window.closeSubjectAssignmentSilently = closeSubjectAssignmentSilently;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', initializeSubjectAssignment);

@@ -300,18 +300,18 @@ function showNotification(message, type = 'info') {
 
 // دالة نسخ النص إلى الحافظة
 function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showNotification(`تم نسخ الرمز: ${text}`, 'info');
-    }).catch(() => {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showNotification(`تم نسخ الرمز: ${text}`, 'info');
-    });
+    // Always use fallback for compatibility
+    fallbackCopy(text);
+}
+
+function fallbackCopy(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    showNotification(`تم نسخ الرمز: ${text}`, 'info');
 }
 
 // دالة تصدير قائمة المدارس إلى Excel

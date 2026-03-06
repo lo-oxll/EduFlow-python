@@ -259,6 +259,19 @@ def create_tables():
           FOREIGN KEY(school_id) REFERENCES schools(id) ON DELETE CASCADE
         )''')
 
+        # Create class_sections table to normalize class/room per grade and school
+        cursor.execute('''CREATE TABLE IF NOT EXISTS class_sections (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          school_id INT NOT NULL,
+          grade_level_id INT,
+          name VARCHAR(100) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY(school_id) REFERENCES schools(id) ON DELETE CASCADE,
+          FOREIGN KEY(grade_level_id) REFERENCES grade_levels(id) ON DELETE SET NULL,
+          UNIQUE KEY unique_section_per_grade (school_id, grade_level_id, name)
+        )''')
+
         # Create teachers table for managing teachers and their subjects
         cursor.execute('''CREATE TABLE IF NOT EXISTS teachers (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -361,6 +374,17 @@ def create_tables():
           FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE,
           FOREIGN KEY(academic_year_id) REFERENCES system_academic_years(id) ON DELETE CASCADE
         )''')
+
+        # Ensure a unique attendance record per student/date/year for ON DUPLICATE KEY logic
+        try:
+            cursor.execute(
+                "ALTER TABLE student_attendance "
+                "ADD CONSTRAINT unique_student_attendance_per_day "
+                "(student_id, academic_year_id, attendance_date)"
+            )
+        except Exception:
+            # Constraint already exists or incompatible with existing data
+            pass
 
         # Create default admin
         cursor.execute('SELECT * FROM users WHERE username = %s', ('admin',))
@@ -558,6 +582,15 @@ def get_teacher_students(teacher_id, academic_year_id=None):
     conn = pool.get_connection()
     try:
         cursor = conn.cursor(dictionary=True)
+        # Get teacher's school_id first
+        cursor.execute('SELECT school_id FROM teachers WHERE id = %s', (teacher_id,))
+        teacher_school = cursor.fetchone()
+        
+        if not teacher_school:
+            return []
+        
+        school_id = teacher_school['school_id']
+        
         # Get teacher's subjects first
         subject_query = '''
             SELECT s.id, s.name, s.grade_level
@@ -571,7 +604,7 @@ def get_teacher_students(teacher_id, academic_year_id=None):
         if not teacher_subjects:
             return []
             
-        # Get students in those grade levels
+        # Get students in those grade levels AND same school
         # Note: Student grade format is "ابتدائي - الأول الابتدائي" 
         # while subject grade_level format is "الأول الابتدائي"
         # We need to match using LIKE pattern
@@ -581,7 +614,7 @@ def get_teacher_students(teacher_id, academic_year_id=None):
         # Build a query that matches grades ending with the grade level
         # e.g., grade "ابتدائي - الأول الابتدائي" should match grade_level "الأول الابتدائي"
         conditions = []
-        params = []
+        params = [school_id]  # Add school_id as first parameter
         for grade in grade_levels:
             conditions.append("s.grade LIKE %s")
             params.append(f"% - {grade}")
@@ -595,7 +628,8 @@ def get_teacher_students(teacher_id, academic_year_id=None):
             SELECT DISTINCT s.id, s.full_name, s.student_code, s.grade, s.room,
                    s.detailed_scores, s.daily_attendance
             FROM students s
-            WHERE ({' OR '.join(conditions)})
+            WHERE s.school_id = %s  -- Only get students from teacher's school
+              AND ({' OR '.join(conditions)})
         '''
         
         if academic_year_id:

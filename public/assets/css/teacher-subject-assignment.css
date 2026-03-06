@@ -1,3 +1,29 @@
+/* Full Screen Modal Support */
+#subjectAssignmentContainer.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#subjectAssignmentContainer .modal-content {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    background: #f8f9fa;
+    border-radius: 0;
+    padding: 0;
+    overflow-y: auto;
+    position: relative;
+}
+
 /* Subject Assignment Container */
 #subjectAssignmentContainer .modal-content {
     padding: 2rem;
@@ -31,8 +57,10 @@
 
 .assignment-content {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 2fr;
     gap: 2rem;
+    height: calc(100vh - 200px);
+    margin-bottom: 80px; /* Space for fixed summary bar */
 }
 
 .current-subjects-section, .available-subjects-section {

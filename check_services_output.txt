@@ -1,7 +1,0 @@
-⚠️ MySQL connection failed: 2003: Can't connect to MySQL server on 'localhost:3306' (10061 No connection could be made because the target machine actively refused it)
-✅ Falling back to SQLite: c:\Users\Milano\Desktop\1m\school.db
-⚠️ Redis not configured, using in-memory cache
-services.py imported successfully!
-RecommendationService class found!
-RecommendationService instance created successfully!
-recommendation_service instance found!

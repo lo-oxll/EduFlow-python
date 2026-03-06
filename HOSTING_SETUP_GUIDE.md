@@ -22,7 +22,7 @@ This indicates that the hosting platform is **NOT** properly configured with pro
 
 #### Step 1: Access Environment Variables
 1. Go to your Render.com dashboard
-2. Select your `sajjaly-pro` service
+2. Select your `eduflow` service
 3. Click on **"Environment"** tab
 4. Click **"Add Environment Variable"**
 

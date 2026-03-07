@@ -308,81 +308,10 @@
             </div>
         </section>
         
-        <!-- Performance Analytics Section -->
-        <section class="section-card" id="performanceAnalyticsSection" style="display: none;">
-            <h2 class="h2-school section-title"><i class="fas fa-chart-line"></i> تحليل الأداء التعليمي</h2>
-            <div class="form-row">
-                <div class="form-group-school">
-                    <label for="analyticsGradeLevel"><i class="fas fa-layer-group"></i> الصف الدراسي</label>
-                    <select id="analyticsGradeLevel" class="form-input" onchange="loadPerformanceAnalytics()">
-                        <option value="">اختر الصف</option>
-                    </select>
-                </div>
-                <div class="form-group-school">
-                    <label for="analyticsSubject"><i class="fas fa-book"></i> المادة الدراسية</label>
-                    <select id="analyticsSubject" class="form-input" onchange="loadPerformanceAnalytics()">
-                        <option value="">جميع المواد</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- Performance Indicators -->
-            <div class="performance-indicators grid-container grid-auto-fit">
-                <div class="indicator-card card">
-                    <div class="indicator-value" id="avgGrade">0</div>
-                    <div class="indicator-label">المعدل العام</div>
-                </div>
-                <div class="indicator-card card">
-                    <div class="indicator-value" id="passRate">0%</div>
-                    <div class="indicator-label">معدل النجاح</div>
-                </div>
-                <div class="indicator-card card">
-                    <div class="indicator-value" id="attendanceRate">0%</div>
-                    <div class="indicator-label">معدل الحضور</div>
-                </div>
-                <div class="indicator-card card">
-                    <div class="indicator-value" id="excellenceRate">0%</div>
-                    <div class="indicator-label">معدل التفوق</div>
-                </div>
-            </div>
-            
-            <!-- Charts Container -->
-            <div class="charts-container grid-container grid-auto-fit">
-                <div class="chart-wrapper card">
-                    <canvas id="gradesChart"></canvas>
-                </div>
-                <div class="chart-wrapper card">
-                    <canvas id="attendanceChart"></canvas>
-                </div>
-            </div>
-            
-            <!-- AI Predictions -->
-            <div class="ai-predictions-section">
-                <h3><i class="fas fa-robot"></i> تنبؤات الذكاء الاصطناعي</h3>
-                <div class="predictions-container grid-container grid-auto-fit">
-                    <div class="prediction-card card">
-                        <h4>الطلاب المتفوقون المتوقعون</h4>
-                        <ul id="topStudentsList"></ul>
-                    </div>
-                    <div class="prediction-card card">
-                        <h4>الطلاب المتأخرون المتوقعون</h4>
-                        <ul id="strugglingStudentsList"></ul>
-                    </div>
-                    <div class="prediction-card card">
-                        <h4>التوصيات التعليمية</h4>
-                        <ul id="recommendationsList"></ul>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
         <!-- Grade Level Content (Dynamically Loaded) -->
         <section class="section-card">
             <h2 class="h2-school section-title">
                 <i class="fas fa-book-open"></i> محتوى الصف
-                <button type="button" class="btn-primary-school btn-small" onclick="showPerformanceAnalytics()">
-                    <i class="fas fa-chart-bar"></i> تحليل الأداء
-                </button>
             </h2>
             <div id="gradeLevelContent">
                 <!-- Content will be loaded here based on grade level selection -->
@@ -398,43 +327,6 @@
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('gradesModal')">&times;</span>
             <h2 class="section-title"><i class="fas fa-chart-line"></i> إدارة درجات الطالب: <span id="gradesStudentName"></span></h2>
-            
-            <!-- Performance Insights and Predictions -->
-            <div class="performance-insights">
-                <h3><i class="fas fa-lightbulb"></i> رؤى الأداء والتنبؤات</h3>
-                <div class="insights-container grid-container grid-auto-fit">
-                    <div class="insight-card card">
-                        <div class="insight-title">المعدل العام</div>
-                        <div class="insight-value" id="studentAvgGrade">0</div>
-                    </div>
-                    <div class="insight-card card">
-                        <div class="insight-title">التنبؤ بالأداء</div>
-                        <div class="insight-value" id="studentPerformancePrediction">متوسط</div>
-                    </div>
-                    <div class="insight-card card" id="passFailCard">
-                        <div class="insight-title">توقع النجاح/الرسوب</div>
-                        <div class="insight-value" id="passFailPrediction">-</div>
-                    </div>
-                </div>
-                
-                <!-- Pass/Fail Prediction Details -->
-                <div id="predictionDetailsBox" class="prediction-box" style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: var(--radius-lg); border-right: 4px solid #6c757d; display: none;">
-                    <div id="predictionMessage" style="font-weight: 500; margin-bottom: 0.5rem;"></div>
-                    <div id="predictionConfidence" style="font-size: 0.9rem; color: #6c757d;"></div>
-                </div>
-
-                <!-- Forecasted Grades Section -->
-                <div id="forecastSection" style="margin-top: 1.5rem; display: none;">
-                    <h3 style="margin-bottom: 1rem; color: var(--brand-primary-800);"><i class="fas fa-chart-line" style="color: var(--brand-primary-500);"></i> الدرجات المتوقعة للفترات القادمة</h3>
-                    <div id="forecastContainer" class="forecast-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;"></div>
-                </div>
-                
-                <!-- Academic Recommendations -->
-                <div class="recommendations-box" style="margin-top: 1.5rem; padding: 1.5rem; background: var(--brand-primary-50); border-radius: var(--radius-lg); border-right: 5px solid var(--brand-primary-500);">
-                    <h3 style="margin-bottom: 1rem; color: var(--brand-primary-800);"><i class="fas fa-graduation-cap" style="color: var(--brand-primary-500);"></i> الإرشاد الأكاديمي</h3>
-                    <div id="studentRecommendations" style="line-height: 1.6;">-</div>
-                </div>
-            </div>
             
             <div class="grades-container table-responsive">
                 <table class="table-school table-enhanced grades-table">

@@ -103,43 +103,6 @@
             </section>
         </div>
 
-        <!-- Performance Insights Section - Now positioned below grades -->
-        <div class="section-card" id="performanceInsightsSection" style="display:none">
-            <h2 class="h2-student section-title"><i class="fas fa-lightbulb"></i> رؤى الأداء والتنبؤات</h2>
-            <div class="performance-insights">
-                <div class="insights-container grid-container grid-auto-fit">
-                    <div class="insight-card card">
-                        <div class="insight-title">المعدل العام</div>
-                        <div class="insight-value" id="studentAvgGrade">0</div>
-                    </div>
-                    <div class="insight-card card">
-                        <div class="insight-title">التنبؤ بالأداء</div>
-                        <div class="insight-value" id="studentPerformancePrediction">متوسط</div>
-                    </div>
-                    <div class="insight-card card" id="passFailCard">
-                        <div class="insight-title">توقع النجاح/الرسوب</div>
-                        <div class="insight-value" id="passFailPrediction">-</div>
-                    </div>
-                </div>
-                
-                <!-- Pass/Fail Prediction Details -->
-                <div id="predictionDetailsBox" class="prediction-box" style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: var(--radius-lg); border-right: 4px solid #6c757d; display: none;">
-                    <div id="predictionMessage" style="font-weight: 500; margin-bottom: 0.5rem;"></div>
-                    <div id="predictionConfidence" style="font-size: 0.9rem; color: #6c757d;"></div>
-                </div>
-
-                <!-- Forecasted Grades Section -->
-                <div id="forecastSection" style="margin-top: 1.5rem; display: none;">
-                    <h3 style="margin-bottom: 1rem; color: var(--brand-primary-800);"><i class="fas fa-chart-line" style="color: var(--brand-primary-500);"></i> الدرجات المتوقعة للفترات القادمة</h3>
-                    <div id="forecastContainer" class="forecast-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;"></div>
-                </div>
-                
-                <div class="recommendations-box" style="margin-top: 1.5rem; padding: 1.5rem; background: var(--brand-primary-50); border-radius: var(--radius-lg); border-right: 5px solid var(--brand-primary-500);">
-                    <h3 style="margin-bottom: 1rem; color: var(--brand-primary-800);"><i class="fas fa-graduation-cap" style="color: var(--brand-primary-500);"></i> الإرشاد الأكاديمي</h3>
-                    <div id="studentRecommendations" style="line-height: 1.6;">-</div>
-                </div>
-            </div>
-        </div>
     </main>
 
     <script>
@@ -159,7 +122,6 @@
                         document.getElementById('loginSection').style.display = 'none';
                         document.getElementById('portalSection').style.display = 'block';
                         document.getElementById('studentName').textContent = currentStudent.full_name;
-                        document.getElementById('performanceInsightsSection').style.display = 'block';
                         loadAcademicYears();
                         displayStudentData();
                     }
@@ -911,7 +873,6 @@
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('portalSection').style.display = 'block';
                 document.getElementById('studentName').textContent = currentStudent.full_name;
-                document.getElementById('performanceInsightsSection').style.display = 'block';
                 loadAcademicYears();
                 displayStudentData();
                 toastManager.showSuccess('تم تسجيل الدخول بنجاح!');
@@ -1410,11 +1371,6 @@
                     displayNoDataMessage('attendanceTableBody', 'لا توجد سجلات حضور لهذه السنة الدراسية');
                 }
 
-                // Update performance insights for this year
-                if (gradesResult.success && gradesResult.raw_grades && gradesResult.raw_grades.length > 0) {
-                    updatePerformanceInsightsForYear(gradesResult.raw_grades);
-                }
-
             } catch (error) {
                 console.error('Error loading data for academic year:', error);
                 showNotification('حدث خطأ في تحميل البيانات', 'error');
@@ -1502,67 +1458,68 @@
         }
 
         // Update performance insights for a specific academic year
-        function updatePerformanceInsightsForYear(grades) {
-            // Convert grades array to detailed_scores format
-            const detailedScores = {};
-            grades.forEach(grade => {
-                detailedScores[grade.subject_name] = {
-                    month1: grade.month1 || 0,
-                    month2: grade.month2 || 0,
-                    midterm: grade.midterm || 0,
-                    month3: grade.month3 || 0,
-                    month4: grade.month4 || 0,
-                    final: grade.final || 0
-                };
-            });
+        // REMOVED: Performance insights now only in comprehensive educational report
+        // function updatePerformanceInsightsForYear(grades) {
+        //     // Convert grades array to detailed_scores format
+        //     const detailedScores = {};
+        //     grades.forEach(grade => {
+        //         detailedScores[grade.subject_name] = {
+        //             month1: grade.month1 || 0,
+        //             month2: grade.month2 || 0,
+        //             midterm: grade.midterm || 0,
+        //             month3: grade.month3 || 0,
+        //             month4: grade.month4 || 0,
+        //             final: grade.final || 0
+        //         };
+        //     });
 
-            // Create a temporary student object with the grades for this year
-            const tempStudent = { ...currentStudent, detailed_scores: JSON.stringify(detailedScores) };
+        //     // Create a temporary student object with the grades for this year
+        //     const tempStudent = { ...currentStudent, detailed_scores: JSON.stringify(detailedScores) };
 
-            // Run prediction
-            const prediction = aiModel.predictPerformance(tempStudent);
+        //     // Run prediction
+        //     const prediction = aiModel.predictPerformance(tempStudent);
 
-            // Update UI
-            const avgDisplay = prediction.rawAvg ? prediction.rawAvg.toFixed(1) + '/' + prediction.maxGrade : prediction.score.toFixed(1) + '%';
-            document.getElementById('studentAvgGrade').textContent = avgDisplay;
+        //     // Update UI
+        //     const avgDisplay = prediction.rawAvg ? prediction.rawAvg.toFixed(1) + '/' + prediction.maxGrade : prediction.score.toFixed(1) + '%';
+        //     document.getElementById('studentAvgGrade').textContent = avgDisplay;
 
-            // Update performance prediction
-            let performanceText = '';
-            let performanceClass = '';
+        //     // Update performance prediction
+        //     let performanceText = '';
+        //     let performanceClass = '';
 
-            switch(prediction.level) {
-                case 'excellent':
-                    performanceText = 'ممتاز 🌟';
-                    performanceClass = 'safe';
-                    break;
-                case 'good':
-                    performanceText = 'جيد ✅';
-                    performanceClass = 'safe';
-                    break;
-                case 'average':
-                    performanceText = 'متوسط ⚠️';
-                    performanceClass = 'at-risk';
-                    break;
-                default:
-                    performanceText = 'يحتاج تحسناً ❌';
-                    performanceClass = 'fail';
-            }
+        //     switch(prediction.level) {
+        //         case 'excellent':
+        //             performanceText = 'ممتاز 🌟';
+        //             performanceClass = 'safe';
+        //             break;
+        //         case 'good':
+        //             performanceText = 'جيد ✅';
+        //             performanceClass = 'safe';
+        //             break;
+        //         case 'average':
+        //             performanceText = 'متوسط ⚠️';
+        //             performanceClass = 'at-risk';
+        //             break;
+        //         default:
+        //             performanceText = 'يحتاج تحسناً ❌';
+        //             performanceClass = 'fail';
+        //     }
 
-            const predictionElem = document.getElementById('studentPerformancePrediction');
-            predictionElem.textContent = performanceText;
-            predictionElem.className = 'insight-value risk-indicator ' + performanceClass;
+        //     const predictionElem = document.getElementById('studentPerformancePrediction');
+        //     predictionElem.textContent = performanceText;
+        //     predictionElem.className = 'insight-value risk-indicator ' + performanceClass;
 
-            // Update recommendations
-            const recommendationsElem = document.getElementById('studentRecommendations');
-            if (prediction.recommendations.length > 0) {
-                recommendationsElem.innerHTML = prediction.recommendations.map(r => {
-                    if (r === '') return '<br>';
-                    return `<div style="margin-bottom:0.5rem">${r}</div>`;
-                }).join('');
-            } else {
-                recommendationsElem.textContent = '-';
-            }
-        }
+        //     // Update recommendations
+        //     const recommendationsElem = document.getElementById('studentRecommendations');
+        //     if (prediction.recommendations.length > 0) {
+        //         recommendationsElem.innerHTML = prediction.recommendations.map(r => {
+        //             if (r === '') return '<br>';
+        //             return `<div style="margin-bottom:0.5rem">${r}</div>`;
+        //         }).join('');
+        //     } else {
+        //         recommendationsElem.textContent = '-';
+        //     }
+        // }
 
         // Display no data message
         function displayNoDataMessage(tbodyId, message) {

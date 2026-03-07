@@ -2035,10 +2035,9 @@ def teacher_add_grade():
                     student_grade.endswith(' - ' + grade_level) or
                     student_grade.endswith('- ' + grade_level) or
                     grade_level in student_grade):
-                return jsonify({
-                    'error': 'Student is not in the grade level for this subject',
-                    'error_ar': 'الطالب ليس في المستوى الدراسي لهذه المادة'
-                }), 403
+                # Log a warning but allow the operation - teacher may have cross-grade assignments
+                print(f"Warning: Student {student_id} grade ({student_grade}) doesn't match subject {subject_name} grade level ({grade_level})")
+                # Note: We're not blocking the save anymore to allow cross-grade teaching scenarios
         # If subject is not found in subjects table (free-text subject),
         # نسمح للمعلم بالحفظ طالما هو مخوّل لهذه المادة
 

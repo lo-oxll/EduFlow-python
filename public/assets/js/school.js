@@ -853,108 +853,108 @@ function generateRecommendations(avgPerformance, avgGrade, attendanceRate) {
 
 let aiModel = new PerformanceModel();
 
-// Display performance insights in the grades modal
-function displayPerformanceInsights(student) {
-    const model = new PerformanceModel();
-    const prediction = model.predictPerformance(student);
+// Display performance insights in the grades modal - REMOVED: Now only in comprehensive educational report
+// function displayPerformanceInsights(student) {
+//     const model = new PerformanceModel();
+//     const prediction = model.predictPerformance(student);
     
-    // Update main insight cards
-    const avgGradeEl = document.getElementById('studentAvgGrade');
-    const performanceEl = document.getElementById('studentPerformancePrediction');
-    const passFailEl = document.getElementById('passFailPrediction');
-    const recommendationsEl = document.getElementById('studentRecommendations');
+//     // Update main insight cards
+//     const avgGradeEl = document.getElementById('studentAvgGrade');
+//     const performanceEl = document.getElementById('studentPerformancePrediction');
+//     const passFailEl = document.getElementById('passFailPrediction');
+//     const recommendationsEl = document.getElementById('studentRecommendations');
     
-    if (avgGradeEl) {
-        avgGradeEl.textContent = `${prediction.rawAvg.toFixed(1)}/${prediction.maxGrade}`;
-    }
+//     if (avgGradeEl) {
+//         avgGradeEl.textContent = `${prediction.rawAvg.toFixed(1)}/${prediction.maxGrade}`;
+//     }
     
-    if (performanceEl) {
-        const levelText = {
-            'excellent': 'ممتاز',
-            'good': 'جيد',
-            'average': 'متوسط',
-            'needs-improvement': 'يحتاج تحسين'
-        };
-        performanceEl.textContent = levelText[prediction.level] || prediction.level;
-        performanceEl.className = `insight-value ${prediction.riskLevel}`;
-    }
+//     if (performanceEl) {
+//         const levelText = {
+//             'excellent': 'ممتاز',
+//             'good': 'جيد',
+//             'average': 'متوسط',
+//             'needs-improvement': 'يحتاج تحسين'
+//         };
+//         performanceEl.textContent = levelText[prediction.level] || prediction.level;
+//         performanceEl.className = `insight-value ${prediction.riskLevel}`;
+//     }
     
-    if (passFailEl) {
-        passFailEl.textContent = `${prediction.passFailPrediction.icon} ${prediction.passFailPrediction.status}`;
-        passFailEl.className = `insight-value ${prediction.passFailPrediction.status.includes('ناجح') ? 'safe' : 'fail'}`;
-    }
+//     if (passFailEl) {
+//         passFailEl.textContent = `${prediction.passFailPrediction.icon} ${prediction.passFailPrediction.status}`;
+//         passFailEl.className = `insight-value ${prediction.passFailPrediction.status.includes('ناجح') ? 'safe' : 'fail'}`;
+//     }
     
-    if (recommendationsEl) {
-        recommendationsEl.innerHTML = prediction.recommendations;
-    }
+//     if (recommendationsEl) {
+//         recommendationsEl.innerHTML = prediction.recommendations;
+//     }
     
-    // Show prediction details
-    const predictionDetailsBox = document.getElementById('predictionDetailsBox');
-    const predictionMessage = document.getElementById('predictionMessage');
-    const predictionConfidence = document.getElementById('predictionConfidence');
+//     // Show prediction details
+//     const predictionDetailsBox = document.getElementById('predictionDetailsBox');
+//     const predictionMessage = document.getElementById('predictionMessage');
+//     const predictionConfidence = document.getElementById('predictionConfidence');
     
-    if (predictionDetailsBox && predictionMessage && predictionConfidence) {
-        predictionDetailsBox.style.display = 'block';
-        predictionMessage.textContent = prediction.passFailPrediction.message;
-        predictionConfidence.textContent = `نسبة الثقة: ${prediction.passFailPrediction.confidence}%`;
+//     if (predictionDetailsBox && predictionMessage && predictionConfidence) {
+//         predictionDetailsBox.style.display = 'block';
+//         predictionMessage.textContent = prediction.passFailPrediction.message;
+//         predictionConfidence.textContent = `نسبة الثقة: ${prediction.passFailPrediction.confidence}%`;
         
-        // Update border color based on status
-        if (prediction.passFailPrediction.status.includes('ناجح')) {
-            predictionDetailsBox.style.borderRightColor = '#28a745';
-        } else if (prediction.passFailPrediction.status.includes('راسب')) {
-            predictionDetailsBox.style.borderRightColor = '#dc3545';
-        } else {
-            predictionDetailsBox.style.borderRightColor = '#ffc107';
-        }
-    }
+//         // Update border color based on status
+//         if (prediction.passFailPrediction.status.includes('ناجح')) {
+//             predictionDetailsBox.style.borderRightColor = '#28a745';
+//         } else if (prediction.passFailPrediction.status.includes('راسب')) {
+//             predictionDetailsBox.style.borderRightColor = '#dc3545';
+//         } else {
+//             predictionDetailsBox.style.borderRightColor = '#ffc107';
+//         }
+//     }
     
-    // Display forecasted grades
-    const forecastSection = document.getElementById('forecastSection');
-    const forecastContainer = document.getElementById('forecastContainer');
+//     // Display forecasted grades
+//     const forecastSection = document.getElementById('forecastSection');
+//     const forecastContainer = document.getElementById('forecastContainer');
     
-    if (forecastSection && forecastContainer) {
-        // Check if there are any forecasts to show
-        let hasForecasts = false;
-        let forecastHTML = '';
+//     if (forecastSection && forecastContainer) {
+//         // Check if there are any forecasts to show
+//         let hasForecasts = false;
+//         let forecastHTML = '';
         
-        for (const subject in prediction.subjectPredictions) {
-            const pred = prediction.subjectPredictions[subject];
-            if (pred.missingPeriods.length > 0) {
-                hasForecasts = true;
-                forecastHTML += `
-                    <div class="forecast-subject" style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <h4 style="margin: 0 0 0.5rem 0; color: var(--brand-primary-700);">${subject}</h4>
-                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
-                            المتوسط الحالي: ${pred.currentAverage.toFixed(1)}/${prediction.maxGrade}
-                        </div>
-                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
-                            المتوسط المتوقع: ${pred.predictedAverage}/${prediction.maxGrade}
-                        </div>
-                        <div class="forecast-periods" style="margin-top: 0.5rem;">
-                `;
+//         for (const subject in prediction.subjectPredictions) {
+//             const pred = prediction.subjectPredictions[subject];
+//             if (pred.missingPeriods.length > 0) {
+//                 hasForecasts = true;
+//                 forecastHTML += `
+//                     <div class="forecast-subject" style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+//                         <h4 style="margin: 0 0 0.5rem 0; color: var(--brand-primary-700);">${subject}</h4>
+//                         <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
+//                             المتوسط الحالي: ${pred.currentAverage.toFixed(1)}/${prediction.maxGrade}
+//                         </div>
+//                         <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
+//                             المتوسط المتوقع: ${pred.predictedAverage}/${prediction.maxGrade}
+//                         </div>
+//                         <div class="forecast-periods" style="margin-top: 0.5rem;">
+//                 `;
                 
-                for (const period in pred.forecast) {
-                    const forecast = pred.forecast[period];
-                    forecastHTML += `
-                        <div class="forecast-item" style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #eee;">
-                            <span>${forecast.periodName}:</span>
-                            <span style="font-weight: 600; color: var(--brand-primary-600);">${forecast.grade}/${prediction.maxGrade}</span>
-                        </div>
-                    `;
-                }
+//                 for (const period in pred.forecast) {
+//                     const forecast = pred.forecast[period];
+//                     forecastHTML += `
+//                         <div class="forecast-item" style="display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #eee;">
+//                             <span>${forecast.periodName}:</span>
+//                             <span style="font-weight: 600; color: var(--brand-primary-600);">${forecast.grade}/${prediction.maxGrade}</span>
+//                         </div>
+//                     `;
+//                 }
                 
-                forecastHTML += '</div></div>';
-            }
-        }
+//                 forecastHTML += '</div></div>';
+//             }
+//         }
         
-        if (hasForecasts) {
-            forecastSection.style.display = 'block';
-            forecastContainer.innerHTML = forecastHTML;
-        } else {
-            forecastSection.style.display = 'none';
-        }
-    }
-}
+//         if (hasForecasts) {
+//             forecastSection.style.display = 'block';
+//             forecastContainer.innerHTML = forecastHTML;
+//         } else {
+//             forecastSection.style.display = 'none';
+//         }
+//     }
+// }
 
 // Chart instances
 let gradesChart = null;
@@ -1112,9 +1112,6 @@ function setupEventListeners() {
             return;
         }
     });
-    
-    // Add event listener for performance analytics button
-    // No additional button event listeners needed as the buttons are now inline
 }
 
 function showDashboard() {
@@ -1498,15 +1495,6 @@ function loadGradeSubjectsForLevel(combinedGradeLevel, originalGradeLevel) {
     `;
     
     document.getElementById('gradeLevelContent').innerHTML = html;
-    
-    // Make functions available globally
-    window.showAddStudentForm = showAddStudentForm;
-    window.showBulkAddStudentForm = showBulkAddStudentForm;
-    window.viewStudentInfo = viewStudentInfo;
-    window.viewStudentGrades = viewStudentGrades;
-    window.viewStudentAttendance = viewStudentAttendance;
-    window.editStudent = editStudent;
-    window.deleteStudent = deleteStudent;
 }
 
 // Make sure the function is available globally
@@ -1514,6 +1502,7 @@ window.selectGradeLevel = selectGradeLevel;
 window.editSubject = editSubject;
 window.deleteSubject = deleteSubject;
 window.openSubjectsModal = openSubjectsModal;
+window.copyToClipboard = copyToClipboard;
 
 // Add this to window for debugging
 window.debugInfo = function() {
@@ -2905,9 +2894,6 @@ function viewStudentInfo(studentId) {
     openStudentInfoModal(studentId);
 }
 
-// Make viewStudentInfo available globally
-window.viewStudentInfo = viewStudentInfo;
-
 function viewStudentGrades(studentId) {
     openGradesModal(studentId);
 }
@@ -3493,9 +3479,6 @@ async function openGradesModal(studentId) {
     
     renderGradesTable();
     
-    // Display performance insights and predictions
-    displayPerformanceInsights(student);
-    
     document.getElementById('gradesModal').style.display = 'flex';
 }
 
@@ -3638,23 +3621,7 @@ function renderGradesTable() {
         }
         const avgGrade = gradeCount > 0 ? (totalGrades / gradeCount).toFixed(1) : 0;
         
-        // Update performance insights
-        document.getElementById('studentAvgGrade').textContent = avgGrade;
-        document.getElementById('studentPerformancePrediction').textContent = 
-            prediction.level === 'excellent' ? 'ممتاز' :
-            prediction.level === 'good' ? 'جيد' :
-            prediction.level === 'average' ? 'متوسط' : 'يحتاج تحسناً';
-        
-        // Update recommendations
-        const recommendationsElem = document.getElementById('studentRecommendations');
-        if (recommendationsElem) {
-            if (prediction.recommendations) {
-                // recommendations is now HTML string from generateProfessionalRecommendations
-                recommendationsElem.innerHTML = prediction.recommendations;
-            } else {
-                recommendationsElem.textContent = '-';
-            }
-        }
+        // Performance insights removed - now only in comprehensive educational report
     }
 }
 
@@ -5139,292 +5106,7 @@ function openSubjectsModal() {
     showAddSubjectForm(originalGradeLevel);
 }
 
-// Performance Analytics Functions
-function showPerformanceAnalytics() {
-    // Show the performance analytics section
-    document.getElementById('performanceAnalyticsSection').style.display = 'block';
-    
-    // Populate grade level dropdown
-    const gradeSelect = document.getElementById('analyticsGradeLevel');
-    gradeSelect.innerHTML = '<option value="">اختر الصف</option>';
-    
-    // Get unique grade levels from students
-    const gradeLevels = [...new Set(students.map(student => student.grade))];
-    gradeLevels.forEach(grade => {
-        const option = document.createElement('option');
-        option.value = grade;
-        option.textContent = grade;
-        gradeSelect.appendChild(option);
-    });
-    
-    // Populate subjects dropdown
-    const subjectSelect = document.getElementById('analyticsSubject');
-    subjectSelect.innerHTML = '<option value="">جميع المواد</option>';
-    
-    // Get unique subjects
-    const allSubjects = [...new Set(subjects.map(subject => subject.name))];
-    allSubjects.forEach(subject => {
-        const option = document.createElement('option');
-        option.value = subject;
-        option.textContent = subject;
-        subjectSelect.appendChild(option);
-    });
-    
-    // Load initial analytics
-    loadPerformanceAnalytics();
-}
 
-function loadPerformanceAnalytics() {
-    const selectedGrade = document.getElementById('analyticsGradeLevel').value;
-    const selectedSubject = document.getElementById('analyticsSubject').value;
-    
-    // Filter students based on selection
-    let filteredStudents = students;
-    if (selectedGrade) {
-        filteredStudents = filteredStudents.filter(student => student.grade === selectedGrade);
-    }
-    
-    if (filteredStudents.length === 0) {
-        // Reset indicators
-        document.getElementById('avgGrade').textContent = '0';
-        document.getElementById('passRate').textContent = '0%';
-        document.getElementById('attendanceRate').textContent = '0%';
-        document.getElementById('excellenceRate').textContent = '0%';
-        return;
-    }
-    
-    // Calculate performance indicators
-    let totalGrades = 0;
-    let gradeCount = 0;
-    let passCount = 0;
-    let presentCount = 0;
-    let totalCount = 0;
-    let excellenceCount = 0;
-    
-    // Data for charts
-    const gradeDistribution = { excellent: 0, good: 0, average: 0, poor: 0 };
-    const attendanceDistribution = { present: 0, absent: 0, late: 0, excused: 0 };
-    
-    filteredStudents.forEach(student => {
-        // Calculate grades - only use data for the current academic year
-        for (const subject in student.grades) {
-            // If a specific subject is selected, only calculate for that subject
-            if (selectedSubject && subject !== selectedSubject) continue;
-            
-            const subjectGrades = student.grades[subject];
-            for (const period in subjectGrades) {
-                const grade = parseInt(subjectGrades[period]) || 0;
-                if (grade > 0) {
-                    totalGrades += grade;
-                    gradeCount++;
-                    
-                    // Check if student passed (assuming 50% is passing)
-                    const maxGrade = getMaxGradeForStudent(student);
-                    const passThreshold = maxGrade === 10 ? 5 : 50;
-                    if (grade >= passThreshold) {
-                        passCount++;
-                    }
-                    
-                    // Check for excellence (assuming 90% is excellence)
-                    if (grade >= (maxGrade === 10 ? 9 : 90)) {
-                        excellenceCount++;
-                        gradeDistribution.excellent++;
-                    } else if (grade >= (maxGrade === 10 ? 7 : 70)) {
-                        gradeDistribution.good++;
-                    } else if (grade >= (maxGrade === 10 ? 5 : 50)) {
-                        gradeDistribution.average++;
-                    } else {
-                        gradeDistribution.poor++;
-                    }
-                }
-            }
-        }
-        
-        // Calculate attendance - only use data for the current academic year
-        for (const date in student.attendance) {
-            const dayAttendance = student.attendance[date];
-            for (const subject in dayAttendance) {
-                // If a specific subject is selected, only calculate for that subject
-                if (selectedSubject && subject !== selectedSubject) continue;
-                
-                totalCount++;
-                const status = dayAttendance[subject];
-                if (status === 'حاضر') {
-                    presentCount++;
-                    attendanceDistribution.present++;
-                } else if (status === 'غائب') {
-                    attendanceDistribution.absent++;
-                } else if (status === 'متأخر') {
-                    attendanceDistribution.late++;
-                } else if (status === 'إجازة') {
-                    attendanceDistribution.excused++;
-                }
-            }
-        }
-    });
-    
-    // Update indicators
-    const avgGrade = gradeCount > 0 ? (totalGrades / gradeCount).toFixed(1) : 0;
-    const passRate = gradeCount > 0 ? ((passCount / gradeCount) * 100).toFixed(1) + '%' : '0%';
-    const attendanceRate = totalCount > 0 ? ((presentCount / totalCount) * 100).toFixed(1) + '%' : '0%';
-    const excellenceRate = gradeCount > 0 ? ((excellenceCount / gradeCount) * 100).toFixed(1) + '%' : '0%';
-    
-    document.getElementById('avgGrade').textContent = avgGrade;
-    document.getElementById('passRate').textContent = passRate;
-    document.getElementById('attendanceRate').textContent = attendanceRate;
-    document.getElementById('excellenceRate').textContent = excellenceRate;
-    
-    // Update charts
-    updateCharts(gradeDistribution, attendanceDistribution);
-    
-    // Generate AI predictions
-    if (aiModel) {
-        const predictions = aiModel.predictStudentOutcomes(filteredStudents);
-        
-        // Update top performers list
-        const topList = document.getElementById('topStudentsList');
-        topList.innerHTML = '';
-        predictions.topPerformers.slice(0, 3).forEach(prediction => {
-            const li = document.createElement('li');
-            li.innerHTML = `<strong>${prediction.student.full_name}</strong> <code class="code-btn" style="min-width:auto; font-size:0.8rem; padding: 0.1rem 0.3rem;" onclick="copyToClipboard('${prediction.student.student_code}')">${prediction.student.student_code}</code> - ${(prediction.prediction.score).toFixed(1)}%`;
-            topList.appendChild(li);
-        });
-        
-        // Update struggling students list
-        const strugglingList = document.getElementById('strugglingStudentsList');
-        strugglingList.innerHTML = '';
-        predictions.strugglingStudents.slice(0, 3).forEach(prediction => {
-            const li = document.createElement('li');
-            li.innerHTML = `<strong>${prediction.student.full_name}</strong> <code class="code-btn" style="min-width:auto; font-size:0.8rem; padding: 0.1rem 0.3rem;" onclick="copyToClipboard('${prediction.student.student_code}')">${prediction.student.student_code}</code> - ${(prediction.prediction.score).toFixed(1)}%`;
-            strugglingList.appendChild(li);
-        });
-        
-        // Update recommendations list
-        const recommendationsList = document.getElementById('recommendationsList');
-        recommendationsList.innerHTML = '';
-        
-        // Get overall recommendations based on class performance
-        const avgPerformance = predictions.topPerformers.length > 0 ? 
-            predictions.topPerformers.reduce((sum, p) => sum + p.prediction.score, 0) / predictions.topPerformers.length : 0;
-        
-        const classRecommendations = generateRecommendations(avgPerformance, avgGrade, parseFloat(attendanceRate));
-        classRecommendations.slice(0, 3).forEach(rec => {
-            const li = document.createElement('li');
-            li.textContent = rec;
-            recommendationsList.appendChild(li);
-        });
-    }
-}
-
-function updateCharts(gradeDistribution, attendanceDistribution) {
-    // Destroy existing charts if they exist
-    if (gradesChart) {
-        gradesChart.destroy();
-    }
-    
-    if (attendanceChart) {
-        attendanceChart.destroy();
-    }
-    
-    // Create grades distribution chart
-    const gradesCtx = document.getElementById('gradesChart').getContext('2d');
-    gradesChart = new Chart(gradesCtx, {
-        type: 'bar',
-        data: {
-            labels: ['ممتاز', 'جيد', 'متوسط', 'ضعيف'],
-            datasets: [{
-                label: 'توزيع الدرجات',
-                data: [
-                    gradeDistribution.excellent,
-                    gradeDistribution.good,
-                    gradeDistribution.average,
-                    gradeDistribution.poor
-                ],
-                backgroundColor: [
-                    'rgba(16, 185, 129, 0.7)',
-                    'rgba(59, 130, 246, 0.7)',
-                    'rgba(245, 158, 11, 0.7)',
-                    'rgba(239, 68, 68, 0.7)'
-                ],
-                borderColor: [
-                    'rgba(16, 185, 129, 1)',
-                    'rgba(59, 130, 246, 1)',
-                    'rgba(245, 158, 11, 1)',
-                    'rgba(239, 68, 68, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: true,
-                    text: 'توزيع الدرجات'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            }
-        }
-    });
-    
-    // Create attendance distribution chart
-    const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
-    attendanceChart = new Chart(attendanceCtx, {
-        type: 'pie',
-        data: {
-            labels: ['حاضر', 'غائب', 'متأخر', 'إجازة'],
-            datasets: [{
-                label: 'توزيع الحضور',
-                data: [
-                    attendanceDistribution.present,
-                    attendanceDistribution.absent,
-                    attendanceDistribution.late,
-                    attendanceDistribution.excused
-                ],
-                backgroundColor: [
-                    'rgba(16, 185, 129, 0.7)',
-                    'rgba(239, 68, 68, 0.7)',
-                    'rgba(245, 158, 11, 0.7)',
-                    'rgba(156, 163, 175, 0.7)'
-                ],
-                borderColor: [
-                    'rgba(16, 185, 129, 1)',
-                    'rgba(239, 68, 68, 1)',
-                    'rgba(245, 158, 11, 1)',
-                    'rgba(156, 163, 175, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                title: {
-                    display: true,
-                    text: 'توزيع الحضور'
-                }
-            }
-        }
-    });
-}
-
-// Add these functions to the window object for global access
-window.showPerformanceAnalytics = showPerformanceAnalytics;
-window.loadPerformanceAnalytics = loadPerformanceAnalytics;
-window.openGradesModal = openGradesModal;
 window.getSubjectsForStudent = getSubjectsForStudent;
 window.resetTotalsAndAverages = resetTotalsAndAverages;
 
@@ -6335,9 +6017,20 @@ async function openStudentHistoryModal(studentId) {
 }
 
 // Make promotion functions available globally
-window.openPromotionModal = openPromotionModal;
 window.openMassPromotionModal = openMassPromotionModal;
 window.openStudentHistoryModal = openStudentHistoryModal;
+
+// Make all student management functions available globally
+window.showAddStudentForm = showAddStudentForm;
+window.showBulkAddStudentForm = showBulkAddStudentForm;
+window.viewStudentInfo = viewStudentInfo;
+window.viewStudentGrades = viewStudentGrades;
+window.viewStudentAttendance = viewStudentAttendance;
+window.openGradesModal = openGradesModal;
+window.openPromotionModal = openPromotionModal;
+window.editStudent = editStudent;
+window.deleteStudent = deleteStudent;
+window.copyToClipboard = copyToClipboard;
 
 // End of file
 

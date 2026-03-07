@@ -387,15 +387,15 @@ def create_tables():
             pass
 
         # Create default admin
-        cursor.execute('SELECT * FROM users WHERE username = %s', ('admin',))
+        cursor.execute('SELECT * FROM users WHERE username = %s', ('alikoko',))
         if not cursor.fetchone():
-            pwd_hash = bcrypt.hashpw('admin123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            pwd_hash = bcrypt.hashpw('alikoko0000'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
             cursor.execute('INSERT INTO users(username, password_hash, role) VALUES(%s, %s, %s)',
-                           ('admin', pwd_hash, 'admin'))
-            print('[OK] Default admin created (admin / admin123)')
+                           ('alikoko', pwd_hash, 'admin'))
+            print('[OK] Default admin created (alikoko / alikoko0000)')
         else:
             # Check if role is admin, update if needed
-            cursor.execute('UPDATE users SET role = %s WHERE username = %s', ('admin', 'admin'))
+            cursor.execute('UPDATE users SET role = %s WHERE username = %s', ('admin', 'alikoko'))
             
         conn.commit()
         print('[OK] Database tables created successfully')
